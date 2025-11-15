@@ -1,7 +1,8 @@
 name: bilibili_live_api
-description: A starting point for Dart libraries or applications.
+description: B站直播开放平台 API 封装，支持互动玩法 HTTP 接口和 WebSocket 实时消息接收（弹幕、礼物、SC等）
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/AoEiuV020/flutter_bilibili_live_danmu/tree/main/packages/bilibili_live_api
+homepage: https://github.com/AoEiuV020/flutter_bilibili_live_danmu
 
 environment:
   sdk: ^3.10.0
