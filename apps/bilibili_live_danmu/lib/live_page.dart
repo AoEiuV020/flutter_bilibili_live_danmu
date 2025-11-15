@@ -37,8 +37,9 @@ class _LivePageState extends State<LivePage> {
 
     // 添加初始提示
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _addInfo('已连接到房间 ${widget.startData.anchorInfo.roomId}');
-      _addInfo('主播: ${widget.startData.anchorInfo.uname}');
+      _addInfo(
+        '已连接到 ${widget.startData.anchorInfo.uname} 的房间 ${widget.startData.anchorInfo.roomId}',
+      );
     });
   }
 
@@ -153,13 +154,22 @@ class _LivePageState extends State<LivePage> {
   }
 
   /// 添加弹幕
-  void _addDanmaku(String content) {
-    _messageListKey.currentState?.addDanmaku(content);
+  void _addDanmaku(String username, String content) {
+    _messageListKey.currentState?.addDanmaku(username, content);
   }
 
   /// 添加提示信息
   void _addInfo(String content) {
     _messageListKey.currentState?.addInfo(content);
+  }
+
+  /// 添加测试弹幕
+  void _addTestDanmaku() {
+    final usernames = ['测试用户', '观众A', '粉丝B', '路人C', '土豪D', '超长用户名测试12345'];
+    final contents = ['666', '主播好厉害', '这是什么操作', '学到了', '送给主播一个火箭', '哈哈哈'];
+    final username = usernames[DateTime.now().millisecond % usernames.length];
+    final content = contents[DateTime.now().millisecond % contents.length];
+    _addDanmaku(username, content);
   }
 
   @override
@@ -177,30 +187,62 @@ class _LivePageState extends State<LivePage> {
                 // 消息列表（弹幕+提示）
                 MessageList(key: _messageListKey),
 
-                // 返回按钮
+                // 返回按钮和测试按钮
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                   top: _showBackButton ? 16 : -60,
                   left: 16,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _exit,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                  child: Row(
+                    children: [
+                      // 返回按钮
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _exit,
                           borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 24,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      // 测试按钮
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _addTestDanmaku,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              '测试',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -5,8 +5,10 @@ class BatchHeartbeatData {
   BatchHeartbeatData({required this.failedGameIds});
 
   factory BatchHeartbeatData.fromJson(Map<String, dynamic> json) {
+    // 处理 null 值情况，默认返回空列表
+    final gameIds = json['failed_game_ids'];
     return BatchHeartbeatData(
-      failedGameIds: (json['failed_game_ids'] as List).cast<String>(),
+      failedGameIds: gameIds != null ? (gameIds as List).cast<String>() : [],
     );
   }
 
