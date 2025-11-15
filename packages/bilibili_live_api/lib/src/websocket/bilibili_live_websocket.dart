@@ -75,11 +75,22 @@ class BilibiliLiveWebSocket {
       throw Exception('无法重连：缺少连接参数');
     }
 
+    // 取消之前的自动重连定时器
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
+    // 暂时禁用自动重连，避免在清理时触发
+    final shouldReconnectBackup = _shouldReconnect;
+    _shouldReconnect = false;
+
     // 关闭旧连接
     await _cleanupClient();
 
-    // 重置重连计数并建立新连接
+    // 恢复自动重连标志并重置计数
+    _shouldReconnect = shouldReconnectBackup;
     _reconnectAttempts = 0;
+
+    // 建立新连接
     await _connectInternal();
   }
 
