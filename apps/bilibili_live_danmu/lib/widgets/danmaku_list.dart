@@ -165,34 +165,31 @@ class MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    // 没有消息时显示空白
-    if (_messages.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     return Container(
       color: widget.displaySettings.backgroundColor,
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        reverse: true, // 反转列表，使新消息在底部
-        itemCount: _messages.length,
-        itemBuilder: (context, index) {
-          // 因为列表反转了，所以索引也要反转
-          final message = _messages[_messages.length - 1 - index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              message.displayText,
-              style: TextStyle(
-                color: widget.displaySettings.textColor,
-                fontSize: widget.displaySettings.fontSize,
-                height: 1.5,
-              ),
+      child: _messages.isEmpty
+          ? const SizedBox.expand() // 空消息时占满整个区域
+          : ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              reverse: true, // 反转列表，使新消息在底部
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                // 因为列表反转了，所以索引也要反转
+                final message = _messages[_messages.length - 1 - index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    message.displayText,
+                    style: TextStyle(
+                      color: widget.displaySettings.textColor,
+                      fontSize: widget.displaySettings.fontSize,
+                      height: 1.5,
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

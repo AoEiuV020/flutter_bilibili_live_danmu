@@ -290,12 +290,13 @@ class _LivePageState extends State<LivePage> {
 
     return PopScope(
       canPop: true,
-      child: GestureDetector(
-        onTap: _showBack,
-        onPanDown: (_) => _showBack(),
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: GestureDetector(
+            onTap: _showBack,
+            onPanDown: (_) => _showBack(),
+            behavior: HitTestBehavior.opaque, // 确保整个区域都能响应点击
             child: Stack(
               children: [
                 // 主内容区域
