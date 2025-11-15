@@ -1,8 +1,9 @@
-/// Support for doing something awesome.
+/// Bilibili直播开放平台API客户端库
 ///
-/// More dartdocs go here.
+/// 提供B站直播开放平台的API封装，包括项目开启、关闭、心跳等功能。
 library;
 
-export 'src/bilibili_live_api_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/bilibili_live_api_client.dart';
+export 'src/models/app_start_response.dart';
+export 'src/models/base_response.dart';
+export 'src/utils/signature_util.dart';
