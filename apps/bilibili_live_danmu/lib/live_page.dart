@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'widgets/danmaku_list.dart';
+import 'widgets/settings_panel.dart';
+import 'models/settings.dart';
 import 'utils/tts_manager.dart';
 
 class LivePage extends StatefulWidget {
@@ -26,11 +28,20 @@ class _LivePageState extends State<LivePage> {
   Timer? _heartbeatTimer;
   Timer? _hideTimer;
   bool _showBackButton = true;
+  bool _showSettings = false;
+  bool _isFirstConnection = true;
   final GlobalKey<MessageListState> _messageListKey = GlobalKey();
+
+  late SettingsManager _settingsManager;
+  DisplaySettings _displaySettings = DisplaySettings.defaultSettings();
+  MessageFilterSettings _filterSettings =
+      MessageFilterSettings.defaultSettings();
 
   @override
   void initState() {
     super.initState();
+    _settingsManager = SettingsManager();
+    _loadSettings();
     _setFullScreen();
     _enableWakelock();
     _startHeartbeat();
@@ -38,7 +49,18 @@ class _LivePageState extends State<LivePage> {
     _initializeAndShowWelcome();
   }
 
-  /// 初始化 TTS 并显示欢迎消息
+  /// 加载设置
+  Future<void> _loadSettings() async {
+    await _settingsManager.load();
+    if (mounted) {
+      setState(() {
+        _displaySettings = _settingsManager.displaySettings;
+        _filterSettings = _settingsManager.filterSettings;
+      });
+    }
+  }
+
+  /// 初始化 TTS 并连接 WebSocket
   Future<void> _initializeAndShowWelcome() async {
     try {
       // 先初始化 TTS
@@ -51,13 +73,6 @@ class _LivePageState extends State<LivePage> {
         onError: _handleWebSocketError,
         onConnectionChanged: _handleConnectionChanged,
       );
-
-      // 初始化完成后再添加欢迎消息
-      if (mounted) {
-        _addInfo(
-          '已连接到 ${widget.startData.anchorInfo.uname} 的房间 ${widget.startData.anchorInfo.roomId}',
-        );
-      }
     } catch (e) {
       debugPrint('[LivePage] 初始化失败: $e');
       if (mounted) {
@@ -68,23 +83,23 @@ class _LivePageState extends State<LivePage> {
 
   /// 处理 WebSocket 消息
   void _handleWebSocketMessage(dynamic message) {
-    if (message is DanmakuMessage) {
+    if (message is DanmakuMessage && _filterSettings.showDanmaku) {
       _addDanmaku(message.uname, message.msg);
-    } else if (message is GiftMessage) {
+    } else if (message is GiftMessage && _filterSettings.showGift) {
       _addInfo('${message.uname} 赠送了 ${message.giftNum} 个 ${message.giftName}');
-    } else if (message is SuperChatMessage) {
+    } else if (message is SuperChatMessage && _filterSettings.showSuperChat) {
       _addInfo('${message.uname} 发送了 ¥${message.rmb} 的SC: ${message.message}');
-    } else if (message is GuardMessage) {
+    } else if (message is GuardMessage && _filterSettings.showGuard) {
       _addInfo(
         '${message.uname} 开通了 ${message.guardNum}${message.guardUnit} ${message.guardLevelName}',
       );
-    } else if (message is LikeMessage) {
-      // 点赞消息太多，不显示
-    } else if (message is EnterRoomMessage) {
-      // 进入房间消息太多，不显示
-    } else if (message is LiveStartMessage) {
+    } else if (message is LikeMessage && _filterSettings.showLike) {
+      _addInfo('${message.uname} 点赞了');
+    } else if (message is EnterRoomMessage && _filterSettings.showEnter) {
+      _addInfo('${message.uname} 进入了直播间');
+    } else if (message is LiveStartMessage && _filterSettings.showLiveStart) {
       _addInfo('直播开始了: ${message.title}');
-    } else if (message is LiveEndMessage) {
+    } else if (message is LiveEndMessage && _filterSettings.showLiveEnd) {
       _addInfo('直播结束了');
     } else if (message is InteractionEndMessage) {
       _addInfo('消息推送已结束，请重新开启');
@@ -103,7 +118,16 @@ class _LivePageState extends State<LivePage> {
     if (!connected) {
       _addInfo('连接已断开，正在重连...');
     } else {
-      _addInfo('连接已恢复');
+      // 首次连接
+      if (_isFirstConnection) {
+        _isFirstConnection = false;
+        _addInfo(
+          '已连接到 ${widget.startData.anchorInfo.uname} 的房间 ${widget.startData.anchorInfo.roomId}',
+        );
+      } else {
+        // 重连成功
+        _addInfo('连接已恢复');
+      }
     }
   }
 
@@ -238,6 +262,10 @@ class _LivePageState extends State<LivePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    final screenSize = MediaQuery.of(context).size;
+
     return PopScope(
       canPop: true,
       child: GestureDetector(
@@ -248,10 +276,76 @@ class _LivePageState extends State<LivePage> {
           body: SafeArea(
             child: Stack(
               children: [
-                // 消息列表（弹幕+提示）
-                MessageList(key: _messageListKey),
+                // 主内容区域
+                isPortrait
+                    ? Column(
+                        children: [
+                          // 竖屏：消息列表在上，设置在下
+                          Expanded(
+                            child: MessageList(
+                              key: _messageListKey,
+                              displaySettings: _displaySettings,
+                            ),
+                          ),
+                          if (_showSettings)
+                            SizedBox(
+                              height: screenSize.height / 2,
+                              child: SettingsPanel(
+                                settingsManager: _settingsManager,
+                                onDisplaySettingsChanged: (settings) {
+                                  setState(() {
+                                    _displaySettings = settings;
+                                  });
+                                },
+                                onFilterSettingsChanged: (settings) {
+                                  setState(() {
+                                    _filterSettings = settings;
+                                  });
+                                },
+                                onClose: () {
+                                  setState(() {
+                                    _showSettings = false;
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          // 横屏：消息列表在左，设置在右
+                          Expanded(
+                            child: MessageList(
+                              key: _messageListKey,
+                              displaySettings: _displaySettings,
+                            ),
+                          ),
+                          if (_showSettings)
+                            SizedBox(
+                              width: screenSize.width / 2,
+                              child: SettingsPanel(
+                                settingsManager: _settingsManager,
+                                onDisplaySettingsChanged: (settings) {
+                                  setState(() {
+                                    _displaySettings = settings;
+                                  });
+                                },
+                                onFilterSettingsChanged: (settings) {
+                                  setState(() {
+                                    _filterSettings = settings;
+                                  });
+                                },
+                                onClose: () {
+                                  setState(() {
+                                    _showSettings = false;
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
 
-                // 返回按钮和测试按钮
+                // 返回按钮、测试按钮、设置按钮
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -273,6 +367,31 @@ class _LivePageState extends State<LivePage> {
                             ),
                             child: const Icon(
                               Icons.arrow_back,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // 设置按钮
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _showSettings = !_showSettings;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.settings,
                               color: Colors.white,
                               size: 24,
                             ),

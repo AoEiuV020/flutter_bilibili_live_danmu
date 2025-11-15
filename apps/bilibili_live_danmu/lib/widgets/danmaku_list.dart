@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/tts_manager.dart';
+import '../models/settings.dart';
 
 /// 消息类型
 enum MessageType {
@@ -43,7 +44,9 @@ class MessageItem {
 
 /// 消息列表组件（弹幕+提示）
 class MessageList extends StatefulWidget {
-  const MessageList({super.key});
+  final DisplaySettings displaySettings;
+
+  const MessageList({super.key, required this.displaySettings});
 
   @override
   State<MessageList> createState() => MessageListState();
@@ -53,14 +56,29 @@ class MessageListState extends State<MessageList> {
   final List<MessageItem> _messages = [];
   final ScrollController _scrollController = ScrollController();
   Timer? _cleanupTimer;
+  int _cleanupIntervalSeconds = 30;
 
   @override
   void initState() {
     super.initState();
+    _updateCleanupTimer();
+  }
 
-    // 每30秒清理一次过期消息
+  @override
+  void didUpdateWidget(MessageList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.displaySettings.displayDuration !=
+        widget.displaySettings.displayDuration) {
+      _updateCleanupTimer();
+    }
+  }
+
+  void _updateCleanupTimer() {
+    _cleanupTimer?.cancel();
+    _cleanupIntervalSeconds = (widget.displaySettings.displayDuration / 4)
+        .ceil();
     _cleanupTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      Duration(seconds: _cleanupIntervalSeconds),
       (_) => _removeExpiredMessages(),
     );
   }
@@ -84,6 +102,8 @@ class MessageListState extends State<MessageList> {
 
   /// 添加消息
   void _addMessage(String content, MessageType type, {String? username}) {
+    if (!mounted) return;
+
     final message = MessageItem(
       content: content,
       type: type,
@@ -114,10 +134,14 @@ class MessageListState extends State<MessageList> {
     TtsManager.instance.setInterruptOldSpeech(interrupt);
   }
 
-  /// 移除过期消息（2分钟前的消息）
+  /// 移除过期消息
   void _removeExpiredMessages() {
+    if (!mounted) return;
+
     final now = DateTime.now();
-    final expireTime = now.subtract(const Duration(minutes: 2));
+    final expireTime = now.subtract(
+      Duration(seconds: widget.displaySettings.displayDuration),
+    );
 
     setState(() {
       _messages.removeWhere((msg) => msg.timestamp.isBefore(expireTime));
@@ -133,31 +157,34 @@ class MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    // 没有消息时显示全黑屏幕
+    // 没有消息时显示空白
     if (_messages.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      reverse: true, // 反转列表，使新消息在底部
-      itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        // 因为列表反转了，所以索引也要反转
-        final message = _messages[_messages.length - 1 - index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text(
-            message.displayText, // 使用 displayText
-            style: const TextStyle(
-              color: Colors.white, // 全部使用纯白色
-              fontSize: 20, // 加大字体
-              height: 1.5,
+    return Container(
+      color: widget.displaySettings.backgroundColor,
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        reverse: true, // 反转列表，使新消息在底部
+        itemCount: _messages.length,
+        itemBuilder: (context, index) {
+          // 因为列表反转了，所以索引也要反转
+          final message = _messages[_messages.length - 1 - index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              message.displayText,
+              style: TextStyle(
+                color: widget.displaySettings.textColor,
+                fontSize: widget.displaySettings.fontSize,
+                height: 1.5,
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
