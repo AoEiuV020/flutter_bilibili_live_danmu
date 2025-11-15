@@ -4,6 +4,10 @@ publish_to: none
 environment:
   sdk: ^3.6.0
 
+workspace:
+  - apps/bilibili_live_danmu
+  - packages/bilibili_live_api
+
 dev_dependencies:
   melos: ^7.3.0
 
