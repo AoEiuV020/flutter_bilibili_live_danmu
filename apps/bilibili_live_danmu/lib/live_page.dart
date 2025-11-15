@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'widgets/danmaku_list.dart';
+import 'utils/tts_manager.dart';
 
 class LivePage extends StatefulWidget {
   final int appId;
@@ -34,13 +35,20 @@ class _LivePageState extends State<LivePage> {
     _enableWakelock();
     _startHeartbeat();
     _startHideTimer();
+    _initializeAndShowWelcome();
+  }
 
-    // 添加初始提示
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  /// 初始化 TTS 并显示欢迎消息
+  Future<void> _initializeAndShowWelcome() async {
+    // 先初始化 TTS
+    await TtsManager.instance.initialize();
+
+    // 初始化完成后再添加欢迎消息
+    if (mounted) {
       _addInfo(
         '已连接到 ${widget.startData.anchorInfo.uname} 的房间 ${widget.startData.anchorInfo.roomId}',
       );
-    });
+    }
   }
 
   @override

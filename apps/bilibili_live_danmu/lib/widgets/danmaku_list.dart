@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../utils/tts_manager.dart';
 
 /// 消息类型
 enum MessageType {
@@ -53,12 +53,11 @@ class MessageListState extends State<MessageList> {
   final List<MessageItem> _messages = [];
   final ScrollController _scrollController = ScrollController();
   Timer? _cleanupTimer;
-  late final FlutterTts _flutterTts;
 
   @override
   void initState() {
     super.initState();
-    _initTts();
+
     // 每30秒清理一次过期消息
     _cleanupTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -70,26 +69,7 @@ class MessageListState extends State<MessageList> {
   void dispose() {
     _cleanupTimer?.cancel();
     _scrollController.dispose();
-    _flutterTts.stop();
     super.dispose();
-  }
-
-  /// 初始化 TTS
-  void _initTts() {
-    _flutterTts = FlutterTts();
-    _flutterTts.setLanguage('zh-CN');
-    _flutterTts.setSpeechRate(0.5); // 语速
-    _flutterTts.setVolume(1.0); // 音量
-    _flutterTts.setPitch(1.0); // 音调
-  }
-
-  /// 播报文本
-  Future<void> _speak(String text) async {
-    try {
-      await _flutterTts.speak(text);
-    } catch (e) {
-      debugPrint('TTS 播报失败: $e');
-    }
   }
 
   /// 添加弹幕
@@ -114,8 +94,8 @@ class MessageListState extends State<MessageList> {
       _messages.add(message);
     });
 
-    // 播报消息
-    _speak(message.speakText);
+    // 播报消息（使用单例）
+    TtsManager.instance.speak(message.speakText);
 
     // 自动滚动到底部（因为使用了 reverse，所以滚动到 0 就是底部）
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -127,6 +107,11 @@ class MessageListState extends State<MessageList> {
         );
       }
     });
+  }
+
+  /// 设置是否打断旧的播报
+  void setInterruptOldSpeech(bool interrupt) {
+    TtsManager.instance.setInterruptOldSpeech(interrupt);
   }
 
   /// 移除过期消息（2分钟前的消息）
