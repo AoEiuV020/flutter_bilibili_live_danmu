@@ -268,6 +268,11 @@ class _LivePageState extends State<LivePage> {
     _messageListKey.currentState?.addInfo(content);
   }
 
+  /// 清空消息列表
+  void _clearMessages() {
+    _messageListKey.currentState?.clear();
+  }
+
   /// 添加测试弹幕
   void _addTestDanmaku() {
     final usernames = ['测试用户', '观众A', '粉丝B', '路人C', '土豪D', '超长用户名测试12345'];
@@ -409,6 +414,27 @@ class _LivePageState extends State<LivePage> {
                             ),
                             child: const Icon(
                               Icons.settings,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // 清屏按钮
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _clearMessages,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.clear_all,
                               color: Colors.white,
                               size: 24,
                             ),

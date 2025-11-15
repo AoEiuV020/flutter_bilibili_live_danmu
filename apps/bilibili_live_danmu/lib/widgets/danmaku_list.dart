@@ -149,6 +149,14 @@ class MessageListState extends State<MessageList> {
   }
 
   /// 清空所有消息
+  void clear() {
+    if (!mounted) return;
+    setState(() {
+      _messages.clear();
+    });
+  }
+
+  /// 清空所有消息
   void clearAll() {
     setState(() {
       _messages.clear();
