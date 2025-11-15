@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'interceptors/logger_interceptor.dart';
 import 'interceptors/signature_interceptor.dart';
 import 'models/response_parser.dart';
 import 'models/app_start_data.dart';
 import 'models/batch_heartbeat_data.dart';
+import 'websocket/bilibili_live_websocket.dart';
 
 /// B站直播开放平台API客户端
 class BilibiliLiveApiClient {
@@ -12,6 +14,7 @@ class BilibiliLiveApiClient {
   late final Dio _dio;
   final String accessKeyId;
   final String accessKeySecret;
+  BilibiliLiveWebSocket? _webSocket;
 
   BilibiliLiveApiClient({
     required this.accessKeyId,
@@ -180,8 +183,42 @@ class BilibiliLiveApiClient {
     }
   }
 
+  /// 创建 WebSocket 连接
+  ///
+  /// [startData] 项目开启返回的数据
+  /// [onMessage] 消息回调
+  /// [onError] 错误回调
+  /// [onConnectionChanged] 连接状态变化回调
+  Future<BilibiliLiveWebSocket> createWebSocket({
+    required AppStartData startData,
+    required void Function(dynamic message) onMessage,
+    void Function(String error)? onError,
+    void Function(bool connected)? onConnectionChanged,
+  }) async {
+    _webSocket?.dispose();
+
+    _webSocket = BilibiliLiveWebSocket()
+      ..onMessage = onMessage
+      ..onError = onError
+      ..onConnectionChanged = onConnectionChanged;
+
+    // 连接 WebSocket
+    final authParams =
+        jsonDecode(startData.websocketInfo.authBody) as Map<String, dynamic>;
+    await _webSocket!.connect(
+      url: startData.websocketInfo.wssLink.first,
+      authParams: authParams,
+    );
+
+    return _webSocket!;
+  }
+
+  /// 获取当前 WebSocket 实例
+  BilibiliLiveWebSocket? get webSocket => _webSocket;
+
   /// 关闭客户端
   void dispose() {
+    _webSocket?.dispose();
     _dio.close();
   }
 }

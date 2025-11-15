@@ -40,14 +40,70 @@ class _LivePageState extends State<LivePage> {
 
   /// 初始化 TTS 并显示欢迎消息
   Future<void> _initializeAndShowWelcome() async {
-    // 先初始化 TTS
-    await TtsManager.instance.initialize();
+    try {
+      // 先初始化 TTS
+      await TtsManager.instance.initialize();
 
-    // 初始化完成后再添加欢迎消息
-    if (mounted) {
-      _addInfo(
-        '已连接到 ${widget.startData.anchorInfo.uname} 的房间 ${widget.startData.anchorInfo.roomId}',
+      // 创建并连接 WebSocket
+      await widget.apiClient.createWebSocket(
+        startData: widget.startData,
+        onMessage: _handleWebSocketMessage,
+        onError: _handleWebSocketError,
+        onConnectionChanged: _handleConnectionChanged,
       );
+
+      // 初始化完成后再添加欢迎消息
+      if (mounted) {
+        _addInfo(
+          '已连接到 ${widget.startData.anchorInfo.uname} 的房间 ${widget.startData.anchorInfo.roomId}',
+        );
+      }
+    } catch (e) {
+      debugPrint('[LivePage] 初始化失败: $e');
+      if (mounted) {
+        _addInfo('初始化失败: $e');
+      }
+    }
+  }
+
+  /// 处理 WebSocket 消息
+  void _handleWebSocketMessage(dynamic message) {
+    if (message is DanmakuMessage) {
+      _addDanmaku(message.uname, message.msg);
+    } else if (message is GiftMessage) {
+      _addInfo('${message.uname} 赠送了 ${message.giftNum} 个 ${message.giftName}');
+    } else if (message is SuperChatMessage) {
+      _addInfo('${message.uname} 发送了 ¥${message.rmb} 的SC: ${message.message}');
+    } else if (message is GuardMessage) {
+      _addInfo(
+        '${message.uname} 开通了 ${message.guardNum}${message.guardUnit} ${message.guardLevelName}',
+      );
+    } else if (message is LikeMessage) {
+      // 点赞消息太多，不显示
+    } else if (message is EnterRoomMessage) {
+      // 进入房间消息太多，不显示
+    } else if (message is LiveStartMessage) {
+      _addInfo('直播开始了: ${message.title}');
+    } else if (message is LiveEndMessage) {
+      _addInfo('直播结束了');
+    } else if (message is InteractionEndMessage) {
+      _addInfo('消息推送已结束，请重新开启');
+    }
+  }
+
+  /// 处理 WebSocket 错误
+  void _handleWebSocketError(String error) {
+    debugPrint('[LivePage] WebSocket 错误: $error');
+    _addInfo('连接异常: $error');
+  }
+
+  /// 处理连接状态变化
+  void _handleConnectionChanged(bool connected) {
+    debugPrint('[LivePage] 连接状态: ${connected ? "已连接" : "已断开"}');
+    if (!connected) {
+      _addInfo('连接已断开，正在重连...');
+    } else {
+      _addInfo('连接已恢复');
     }
   }
 
