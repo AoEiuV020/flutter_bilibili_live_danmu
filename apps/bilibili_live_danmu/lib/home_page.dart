@@ -105,35 +105,24 @@ class _HomePageState extends State<HomePage> {
         accessKeySecret: _accessKeySecretController.text,
       );
 
-      // 调用start接口
-      final response = await client.start(
+      // 调用start接口，直接返回数据或抛出异常
+      final startData = await client.start(
         code: _codeController.text,
         appId: int.parse(_appIdController.text),
       );
 
       if (!mounted) return;
 
-      if (response.isSuccess && response.data != null) {
-        // 成功后跳转到第二页
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => LivePage(
-              appId: int.parse(_appIdController.text),
-              startData: response.data!,
-              apiClient: client,
-            ),
+      // 成功后跳转到第二页
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => LivePage(
+            appId: int.parse(_appIdController.text),
+            startData: startData,
+            apiClient: client,
           ),
-        );
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('启动失败: ${response.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,5 @@
 library;
 
 export 'src/bilibili_live_api_client.dart';
-export 'src/models/app_start_response.dart';
 export 'src/models/base_response.dart';
 export 'src/utils/signature_util.dart';

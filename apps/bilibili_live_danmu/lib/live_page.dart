@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'widgets/danmaku_list.dart';
 
 class LivePage extends StatefulWidget {
   final int appId;
@@ -21,20 +23,31 @@ class LivePage extends StatefulWidget {
 
 class _LivePageState extends State<LivePage> {
   Timer? _heartbeatTimer;
-  String _status = '连接中...';
-  int _heartbeatCount = 0;
+  Timer? _hideTimer;
+  bool _showBackButton = true;
+  final GlobalKey<MessageListState> _messageListKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _setFullScreen();
+    _enableWakelock();
     _startHeartbeat();
+    _startHideTimer();
+
+    // 添加初始提示
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _addInfo('已连接到房间 ${widget.startData.anchorInfo.roomId}');
+      _addInfo('主播: ${widget.startData.anchorInfo.uname}');
+    });
   }
 
   @override
   void dispose() {
     _stopHeartbeat();
+    _stopHideTimer();
     _exitFullScreen();
+    _disableWakelock();
     _endSession();
     super.dispose();
   }
@@ -50,6 +63,16 @@ class _LivePageState extends State<LivePage> {
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
     );
+  }
+
+  /// 启用防锁屏
+  void _enableWakelock() {
+    WakelockPlus.enable();
+  }
+
+  /// 禁用防锁屏
+  void _disableWakelock() {
+    WakelockPlus.disable();
   }
 
   /// 开始心跳
@@ -73,26 +96,13 @@ class _LivePageState extends State<LivePage> {
   /// 发送心跳
   Future<void> _sendHeartbeat() async {
     try {
-      final response = await widget.apiClient.heartbeat(
+      await widget.apiClient.heartbeat(
         gameId: widget.startData.gameInfo.gameId,
       );
-
-      if (mounted) {
-        setState(() {
-          _heartbeatCount++;
-          if (response.isSuccess) {
-            _status = '心跳正常 ($_heartbeatCount)';
-          } else {
-            _status = '心跳异常: ${response.message}';
-          }
-        });
-      }
+      debugPrint('心跳成功');
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _status = '心跳失败: $e';
-        });
-      }
+      debugPrint('心跳失败: $e');
+      _addInfo('心跳失败: $e');
     }
   }
 
@@ -103,6 +113,7 @@ class _LivePageState extends State<LivePage> {
         appId: widget.appId,
         gameId: widget.startData.gameInfo.gameId,
       );
+      debugPrint('会话结束');
     } catch (e) {
       debugPrint('结束会话失败: $e');
     } finally {
@@ -110,170 +121,93 @@ class _LivePageState extends State<LivePage> {
     }
   }
 
-  /// 退出
-  Future<void> _exit() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出直播吗?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
+  /// 启动隐藏计时器
+  void _startHideTimer() {
+    _stopHideTimer();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showBackButton = false;
+        });
+      }
+    });
+  }
 
-    if (confirm == true && mounted) {
-      Navigator.of(context).pop();
-    }
+  /// 停止隐藏计时器
+  void _stopHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = null;
+  }
+
+  /// 显示返回按钮
+  void _showBack() {
+    setState(() {
+      _showBackButton = true;
+    });
+    _startHideTimer();
+  }
+
+  /// 退出
+  void _exit() {
+    Navigator.of(context).pop();
+  }
+
+  /// 添加弹幕
+  void _addDanmaku(String content) {
+    _messageListKey.currentState?.addDanmaku(content);
+  }
+
+  /// 添加提示信息
+  void _addInfo(String content) {
+    _messageListKey.currentState?.addInfo(content);
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          await _exit();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              // 主播信息
-              Positioned(
-                top: 20,
-                left: 20,
-                right: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // 主播头像
-                        if (widget.startData.anchorInfo.uface.isNotEmpty)
-                          ClipOval(
-                            child: Image.network(
-                              widget.startData.anchorInfo.uface,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 50,
-                                  height: 50,
-                                  color: Colors.grey,
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        const SizedBox(width: 12),
-                        // 主播信息
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.startData.anchorInfo.uname,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '房间号: ${widget.startData.anchorInfo.roomId}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
+      canPop: true,
+      child: GestureDetector(
+        onTap: _showBack,
+        onPanDown: (_) => _showBack(),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                // 消息列表（弹幕+提示）
+                MessageList(key: _messageListKey),
+
+                // 返回按钮
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  top: _showBackButton ? 16 : -60,
+                  left: 16,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _exit,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // 状态信息
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInfoRow(
-                            '场次ID',
-                            widget.startData.gameInfo.gameId,
-                          ),
-                          const SizedBox(height: 4),
-                          _buildInfoRow('状态', _status),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 退出按钮
-              Positioned(
-                bottom: 40,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _exit,
-                    icon: const Icon(Icons.exit_to_app),
-                    label: const Text('退出'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ),
-      ],
     );
   }
 }

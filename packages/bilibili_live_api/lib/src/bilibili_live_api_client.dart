@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'interceptors/logger_interceptor.dart';
 import 'interceptors/signature_interceptor.dart';
-import 'models/app_start_response.dart';
-import 'models/base_response.dart';
+import 'models/response_parser.dart';
+import 'models/app_start_data.dart';
+import 'models/batch_heartbeat_data.dart';
 
 /// B站直播开放平台API客户端
 class BilibiliLiveApiClient {
@@ -50,17 +51,18 @@ class BilibiliLiveApiClient {
   ///
   /// [code] 主播身份码
   /// [appId] 项目ID (int64)
-  Future<AppStartResponse> start({
-    required String code,
-    required int appId,
-  }) async {
+  /// 返回 [AppStartData] 项目开启数据
+  Future<AppStartData> start({required String code, required int appId}) async {
     try {
       final response = await _dio.post(
         '/v2/app/start',
         data: {'code': code, 'app_id': appId},
       );
 
-      return AppStartResponse.fromJson(response.data as Map<String, dynamic>);
+      return parseResponse<AppStartData>(
+        response.data as Map<String, dynamic>,
+        (data) => AppStartData.fromJson(data as Map<String, dynamic>),
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -73,17 +75,14 @@ class BilibiliLiveApiClient {
   ///
   /// [appId] 项目ID (int64)
   /// [gameId] 场次ID
-  Future<BaseResponse<Map<String, dynamic>>> end({
-    required int appId,
-    required String gameId,
-  }) async {
+  Future<void> end({required int appId, required String gameId}) async {
     try {
       final response = await _dio.post(
         '/v2/app/end',
         data: {'app_id': appId, 'game_id': gameId},
       );
 
-      return BaseResponse<Map<String, dynamic>>.fromJson(
+      parseResponse<Map<String, dynamic>>(
         response.data as Map<String, dynamic>,
         null,
       );
@@ -98,16 +97,14 @@ class BilibiliLiveApiClient {
   /// 互动玩法超过60秒，互动插件和互动工具超过180s未收到项目心跳，会自动关闭当前场次。
   ///
   /// [gameId] 场次ID
-  Future<BaseResponse<Map<String, dynamic>>> heartbeat({
-    required String gameId,
-  }) async {
+  Future<void> heartbeat({required String gameId}) async {
     try {
       final response = await _dio.post(
         '/v2/app/heartbeat',
         data: {'game_id': gameId},
       );
 
-      return BaseResponse<Map<String, dynamic>>.fromJson(
+      parseResponse<Map<String, dynamic>>(
         response.data as Map<String, dynamic>,
         null,
       );
@@ -121,7 +118,8 @@ class BilibiliLiveApiClient {
   /// 为项目心跳的批量请求版本。
   ///
   /// [gameIds] 场次ID列表 (单次请求game_id数量要小于200条)
-  Future<BaseResponse<BatchHeartbeatData>> batchHeartbeat({
+  /// 返回 [BatchHeartbeatData] 包含失败的场次ID列表
+  Future<BatchHeartbeatData> batchHeartbeat({
     required List<String> gameIds,
   }) async {
     if (gameIds.length > 200) {
@@ -134,7 +132,7 @@ class BilibiliLiveApiClient {
         data: {'game_ids': gameIds},
       );
 
-      return BaseResponse<BatchHeartbeatData>.fromJson(
+      return parseResponse<BatchHeartbeatData>(
         response.data as Map<String, dynamic>,
         (data) => BatchHeartbeatData.fromJson(data as Map<String, dynamic>),
       );
