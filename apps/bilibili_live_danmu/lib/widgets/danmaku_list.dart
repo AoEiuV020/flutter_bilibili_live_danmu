@@ -65,11 +65,11 @@ class MessageListState extends State<MessageList> {
       _messages.add(MessageItem(content: content, type: type));
     });
 
-    // 自动滚动到底部
+    // 自动滚动到底部（因为使用了 reverse，所以滚动到 0 就是底部）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -96,30 +96,26 @@ class MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
+    // 没有消息时显示全黑屏幕
     if (_messages.isEmpty) {
-      return const Center(
-        child: Text(
-          '等待消息...',
-          style: TextStyle(color: Colors.white54, fontSize: 16),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
+      reverse: true, // 反转列表，使新消息在底部
       itemCount: _messages.length,
       itemBuilder: (context, index) {
-        final message = _messages[index];
+        // 因为列表反转了，所以索引也要反转
+        final message = _messages[_messages.length - 1 - index];
         return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Text(
             message.content,
-            style: TextStyle(
-              color: message.type == MessageType.info
-                  ? Colors.white70
-                  : Colors.white,
-              fontSize: message.type == MessageType.info ? 14 : 16,
+            style: const TextStyle(
+              color: Colors.white, // 全部使用纯白色
+              fontSize: 20, // 加大字体
               height: 1.5,
             ),
           ),
