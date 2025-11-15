@@ -37,6 +37,8 @@ class _LivePageState extends State<LivePage> {
   MessageFilterSettings _filterSettings =
       MessageFilterSettings.defaultSettings();
 
+  BilibiliLiveWebSocket? _webSocket;
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +69,7 @@ class _LivePageState extends State<LivePage> {
       await TtsManager.instance.initialize();
 
       // 创建并连接 WebSocket
-      await widget.apiClient.createWebSocket(
+      _webSocket = await widget.apiClient.createWebSocket(
         startData: widget.startData,
         onMessage: _handleWebSocketMessage,
         onError: _handleWebSocketError,
@@ -102,7 +104,21 @@ class _LivePageState extends State<LivePage> {
     } else if (message is LiveEndMessage && _filterSettings.showLiveEnd) {
       _addInfo('直播结束了');
     } else if (message is InteractionEndMessage) {
-      _addInfo('消息推送已结束，请重新开启');
+      // 交互结束，当前连接已废弃，需要重新连接
+      _handleInteractionEnd();
+    }
+  }
+
+  /// 处理交互结束消息
+  Future<void> _handleInteractionEnd() async {
+    _addInfo('消息推送已结束，正在重新连接...');
+    try {
+      await _webSocket?.reconnect();
+    } catch (e) {
+      debugPrint('[LivePage] 重连失败: $e');
+      if (mounted) {
+        _addInfo('重连失败: $e');
+      }
     }
   }
 
@@ -138,6 +154,7 @@ class _LivePageState extends State<LivePage> {
     _exitFullScreen();
     _disableWakelock();
     _endSession();
+    _webSocket?.dispose();
     super.dispose();
   }
 

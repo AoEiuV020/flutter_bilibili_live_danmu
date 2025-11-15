@@ -60,13 +60,27 @@ class BilibiliLiveWebSocket {
     await _client!.connect(_url!, _authBody!);
   }
 
-  /// 断开连接
+  /// 断开连接（停止重连）
   Future<void> disconnect() async {
     _shouldReconnect = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     await _cleanupClient();
     onConnectionChanged?.call(false);
+  }
+
+  /// 重新连接（关闭旧连接并建立新连接）
+  Future<void> reconnect() async {
+    if (_url == null || _authBody == null) {
+      throw Exception('无法重连：缺少连接参数');
+    }
+
+    // 关闭旧连接
+    await _cleanupClient();
+
+    // 重置重连计数并建立新连接
+    _reconnectAttempts = 0;
+    await _connectInternal();
   }
 
   /// 清理客户端

@@ -14,7 +14,6 @@ class BilibiliLiveApiClient {
   late final Dio _dio;
   final String accessKeyId;
   final String accessKeySecret;
-  BilibiliLiveWebSocket? _webSocket;
 
   BilibiliLiveApiClient({
     required this.accessKeyId,
@@ -183,7 +182,9 @@ class BilibiliLiveApiClient {
     }
   }
 
-  /// 创建 WebSocket 连接
+  /// 创建 WebSocket 连接（工厂方法）
+  ///
+  /// 返回一个新的 WebSocket 实例，由调用方自行管理生命周期
   ///
   /// [startData] 项目开启返回的数据
   /// [onMessage] 消息回调
@@ -195,9 +196,7 @@ class BilibiliLiveApiClient {
     void Function(String error)? onError,
     void Function(bool connected)? onConnectionChanged,
   }) async {
-    _webSocket?.dispose();
-
-    _webSocket = BilibiliLiveWebSocket()
+    final webSocket = BilibiliLiveWebSocket()
       ..onMessage = onMessage
       ..onError = onError
       ..onConnectionChanged = onConnectionChanged;
@@ -205,20 +204,16 @@ class BilibiliLiveApiClient {
     // 连接 WebSocket
     final authParams =
         jsonDecode(startData.websocketInfo.authBody) as Map<String, dynamic>;
-    await _webSocket!.connect(
+    await webSocket.connect(
       url: startData.websocketInfo.wssLink.first,
       authParams: authParams,
     );
 
-    return _webSocket!;
+    return webSocket;
   }
-
-  /// 获取当前 WebSocket 实例
-  BilibiliLiveWebSocket? get webSocket => _webSocket;
 
   /// 关闭客户端
   void dispose() {
-    _webSocket?.dispose();
     _dio.close();
   }
 }
