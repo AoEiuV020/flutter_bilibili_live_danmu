@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../utils/tts_manager.dart';
 import '../models/settings.dart';
 
 /// 消息类型
@@ -25,18 +24,6 @@ class MessageItem {
   String get displayText {
     if (type == MessageType.danmaku && username != null) {
       return '$username: $content';
-    }
-    return content;
-  }
-
-  /// 获取播报文本
-  String get speakText {
-    if (type == MessageType.danmaku && username != null) {
-      // 用户名超过10字符截断
-      final truncatedUsername = username!.length > 10
-          ? username!.substring(0, 10)
-          : username!;
-      return '$truncatedUsername说$content';
     }
     return content;
   }
@@ -114,9 +101,6 @@ class MessageListState extends State<MessageList> {
       _messages.add(message);
     });
 
-    // 播报消息（使用单例）
-    TtsManager.instance.speak(message.speakText);
-
     // 自动滚动到底部（因为使用了 reverse，所以滚动到 0 就是底部）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -127,11 +111,6 @@ class MessageListState extends State<MessageList> {
         );
       }
     });
-  }
-
-  /// 设置是否打断旧的播报
-  void setInterruptOldSpeech(bool interrupt) {
-    TtsManager.instance.setInterruptOldSpeech(interrupt);
   }
 
   /// 移除过期消息
