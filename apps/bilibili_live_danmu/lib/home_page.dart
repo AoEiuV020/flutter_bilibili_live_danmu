@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'live_page.dart';
+import 'utils/tts_manager.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +25,23 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadConfig();
+    _initializeTts();
+  }
+
+  /// 初始化 TTS（不阻塞页面加载）
+  void _initializeTts() {
+    // 在后台初始化 TTS，不等待结果，不影响页面加载
+    TtsManager.instance
+        .initialize()
+        .timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('TTS 初始化超时（10秒）');
+          },
+        )
+        .catchError((e) {
+          debugPrint('TTS 初始化失败: $e');
+        });
   }
 
   @override

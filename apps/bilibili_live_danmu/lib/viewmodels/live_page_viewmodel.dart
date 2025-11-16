@@ -4,8 +4,8 @@ import '../managers/system_ui_manager.dart';
 import '../managers/heartbeat_manager.dart';
 import '../managers/websocket_message_handler.dart';
 import '../models/settings.dart';
-import '../utils/tts_manager.dart';
 import '../utils/message_dispatcher.dart';
+import '../utils/tts_manager.dart';
 
 /// LivePage ViewModel - 管理所有业务逻辑
 class LivePageViewModel {
@@ -54,17 +54,28 @@ class LivePageViewModel {
       },
     );
 
-    // 初始化 TTS 并连接 WebSocket
+    // 检查 TTS 初始化状态
+    _checkTtsStatus();
+
+    // 连接 WebSocket
     await _initializeWebSocket();
+  }
+
+  /// 检查 TTS 初始化状态
+  void _checkTtsStatus() {
+    final ttsManager = TtsManager.instance;
+    if (!ttsManager.isInitialized) {
+      messageDispatcher.dispatchInfo('⚠️ TTS 未初始化成功，语音播报功能不可用');
+      debugPrint('[LivePageViewModel] TTS 未初始化');
+    } else {
+      debugPrint('[LivePageViewModel] TTS 已就绪');
+    }
   }
 
   /// 初始化 WebSocket
   Future<void> _initializeWebSocket() async {
     try {
-      // 先初始化 TTS
-      await TtsManager.instance.initialize();
-
-      // 创建并连接 WebSocket
+      // 创建并连接 WebSocket（TTS 已在 HomePage 初始化）
       _webSocket = await apiClient.createWebSocket(
         startData: startData,
         onMessage: _handleWebSocketMessage,

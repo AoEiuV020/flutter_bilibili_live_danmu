@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// TTS 管理器（单例）
 class TtsManager {
   static TtsManager? _instance;
-  late final FlutterTts _flutterTts;
+  FlutterTts? _flutterTts;
   bool _isInitialized = false;
+  bool _isInitializing = false; // 防止并发初始化
   bool _interruptOldSpeech; // 是否打断旧的播报
 
   // 私有构造函数
@@ -24,28 +27,55 @@ class TtsManager {
     _instance = null;
   }
 
+  /// 获取初始化状态
+  bool get isInitialized => _isInitialized;
+
   /// 初始化 TTS
   Future<void> initialize() async {
+    // 如果已经初始化或正在初始化，直接返回
     if (_isInitialized) return;
+    if (_isInitializing) {
+      // 等待正在进行的初始化完成
+      while (_isInitializing && !_isInitialized) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return;
+    }
 
-    _flutterTts = FlutterTts();
+    _isInitializing = true;
 
     try {
-      await _flutterTts.setLanguage('zh-CN');
-      await _flutterTts.setSpeechRate(0.5); // 语速
-      await _flutterTts.setVolume(1.0); // 音量
-      await _flutterTts.setPitch(1.0); // 音调
+      // 只创建一次FlutterTts实例
+      _flutterTts ??= FlutterTts();
+
+      // 添加超时保护，防止初始化卡死
+      await Future.wait([
+        // await _flutterTts!.setLanguage('zh-CN'),
+        _flutterTts!.setSpeechRate(0.5), // 语速
+        _flutterTts!.setVolume(1.0), // 音量
+        _flutterTts!.setPitch(1.0), // 音调
+      ]).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('TTS 初始化超时');
+          throw TimeoutException('TTS 初始化超时', const Duration(seconds: 5));
+        },
+      );
 
       _isInitialized = true;
       debugPrint('TTS 初始化成功');
     } catch (e) {
       debugPrint('TTS 初始化失败: $e');
+      // 初始化失败时，清理FlutterTts实例
+      _flutterTts = null;
+    } finally {
+      _isInitializing = false;
     }
   }
 
   /// 播报文本
   Future<void> speak(String text) async {
-    if (!_isInitialized) {
+    if (!_isInitialized || _flutterTts == null) {
       debugPrint('TTS 未初始化');
       return;
     }
@@ -53,10 +83,10 @@ class TtsManager {
     try {
       // 如果设置为打断旧的播报，先停止当前播报
       if (_interruptOldSpeech) {
-        await _flutterTts.stop();
+        await _flutterTts!.stop();
       }
 
-      await _flutterTts.speak(text);
+      await _flutterTts!.speak(text);
     } catch (e) {
       debugPrint('TTS 播报失败: $e');
     }
@@ -64,10 +94,10 @@ class TtsManager {
 
   /// 停止播报
   Future<void> stop() async {
-    if (!_isInitialized) return;
+    if (!_isInitialized || _flutterTts == null) return;
 
     try {
-      await _flutterTts.stop();
+      await _flutterTts!.stop();
     } catch (e) {
       debugPrint('TTS 停止失败: $e');
     }
@@ -80,10 +110,10 @@ class TtsManager {
 
   /// 设置语速 (0.0 - 1.0)
   Future<void> setSpeechRate(double rate) async {
-    if (!_isInitialized) return;
+    if (!_isInitialized || _flutterTts == null) return;
 
     try {
-      await _flutterTts.setSpeechRate(rate);
+      await _flutterTts!.setSpeechRate(rate);
     } catch (e) {
       debugPrint('设置语速失败: $e');
     }
@@ -91,10 +121,10 @@ class TtsManager {
 
   /// 设置音量 (0.0 - 1.0)
   Future<void> setVolume(double volume) async {
-    if (!_isInitialized) return;
+    if (!_isInitialized || _flutterTts == null) return;
 
     try {
-      await _flutterTts.setVolume(volume);
+      await _flutterTts!.setVolume(volume);
     } catch (e) {
       debugPrint('设置音量失败: $e');
     }
@@ -102,10 +132,10 @@ class TtsManager {
 
   /// 设置音调 (0.5 - 2.0)
   Future<void> setPitch(double pitch) async {
-    if (!_isInitialized) return;
+    if (!_isInitialized || _flutterTts == null) return;
 
     try {
-      await _flutterTts.setPitch(pitch);
+      await _flutterTts!.setPitch(pitch);
     } catch (e) {
       debugPrint('设置音调失败: $e');
     }
@@ -113,8 +143,8 @@ class TtsManager {
 
   /// 释放资源
   void dispose() {
-    if (_isInitialized) {
-      _flutterTts.stop();
+    if (_isInitialized && _flutterTts != null) {
+      _flutterTts!.stop();
       _isInitialized = false;
     }
   }
