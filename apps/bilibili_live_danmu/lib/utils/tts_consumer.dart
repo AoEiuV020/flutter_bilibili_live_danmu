@@ -5,7 +5,8 @@ import 'tts_manager.dart';
 class TtsConsumer implements MessageConsumer {
   @override
   void consumeDanmaku(DanmakuMessageData message) {
-    final speakText = _formatDanmakuText(message.username, message.content);
+    // 用户名已经在 WebSocketMessageHandler 中被截断
+    final speakText = '${message.username}说${message.content}';
     TtsManager.instance.speak(speakText);
   }
 
@@ -17,20 +18,5 @@ class TtsConsumer implements MessageConsumer {
   @override
   void dispose() {
     // TTS 由 TtsManager 单例管理，此处无需释放
-  }
-
-  /// 格式化弹幕播报文本
-  /// 用户名统一缩短到最多10字符
-  String _formatDanmakuText(String username, String content) {
-    final truncatedUsername = _truncateUsername(username);
-    return '$truncatedUsername说$content';
-  }
-
-  /// 截断用户名到最多10个字符
-  String _truncateUsername(String username) {
-    if (username.length <= 10) {
-      return username;
-    }
-    return username.substring(0, 10);
   }
 }

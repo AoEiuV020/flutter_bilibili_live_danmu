@@ -142,7 +142,8 @@ class LivePageViewModel {
     final contents = ['666', '主播好厉害', '这是什么操作', '学到了', '送给主播一个火箭', '哈哈哈'];
     final username = usernames[DateTime.now().millisecond % usernames.length];
     final content = contents[DateTime.now().millisecond % contents.length];
-    messageDispatcher.dispatchDanmaku(username, content);
+    // 通过消息处理器处理，确保用户名被统一截断
+    _messageHandler.handleDanmaku(username, content);
   }
 
   /// 结束会话
