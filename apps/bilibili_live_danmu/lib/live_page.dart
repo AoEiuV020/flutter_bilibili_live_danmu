@@ -92,8 +92,8 @@ class _LivePageState extends State<LivePage> {
   @override
   void dispose() {
     _stopHideTimer();
-    _viewModel.dispose();
     _messageDispatcher.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 

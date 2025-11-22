@@ -66,7 +66,6 @@ class BilibiliLiveWebSocket {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     await _cleanupClient();
-    onConnectionChanged?.call(false);
   }
 
   /// 重新连接（关闭旧连接并建立新连接）

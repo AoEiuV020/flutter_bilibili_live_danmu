@@ -17,6 +17,6 @@ class TtsConsumer implements MessageConsumer {
 
   @override
   void dispose() {
-    // TTS 由 TtsManager 单例管理，此处无需释放
+    TtsManager.instance.stop();
   }
 }
