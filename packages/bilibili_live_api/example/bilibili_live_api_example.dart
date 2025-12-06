@@ -1,4 +1,5 @@
 import 'package:bilibili_live_api/bilibili_live_api.dart';
+import '../lib/src/utils/logger.dart';
 import 'example_config.dart';
 
 void main() async {
@@ -11,38 +12,38 @@ void main() async {
 
   try {
     // 1. 项目开启（自动处理错误，code != 0 会抛出异常）
-    print('开启项目...');
+    Logger.info('开启项目...');
     final data = await client.start(
       code: ExampleConfig.code,
       appId: ExampleConfig.appId,
     );
 
-    print('项目开启成功!');
-    print('场次ID: ${data.gameInfo.gameId}');
-    print('主播昵称: ${data.anchorInfo.uname}');
-    print('房间号: ${data.anchorInfo.roomId}');
+    Logger.info('项目开启成功!');
+    Logger.info('场次ID: ${data.gameInfo.gameId}');
+    Logger.info('主播昵称: ${data.anchorInfo.uname}');
+    Logger.info('房间号: ${data.anchorInfo.roomId}');
 
     // 2. 发送心跳
-    print('\n发送心跳...');
+    Logger.info('\n发送心跳...');
     await client.heartbeat(gameId: data.gameInfo.gameId);
-    print('心跳成功!');
+    Logger.info('心跳成功!');
 
     // 3. 批量心跳
-    print('\n批量心跳...');
+    Logger.info('\n批量心跳...');
     final batchResult = await client.batchHeartbeat(
       gameIds: [data.gameInfo.gameId],
     );
-    print('批量心跳成功!');
-    print('失败的场次: ${batchResult.failedGameIds}');
+    Logger.info('批量心跳成功!');
+    Logger.info('失败的场次: ${batchResult.failedGameIds}');
 
     // 4. 项目关闭
-    print('\n关闭项目...');
+    Logger.info('\n关闭项目...');
     await client.end(appId: ExampleConfig.appId, gameId: data.gameInfo.gameId);
-    print('项目关闭成功!');
+    Logger.info('项目关闭true!');
   } on BilibiliApiException catch (e) {
-    print('API错误: $e');
+    Logger.error('API错误: $e');
   } catch (e) {
-    print('错误: $e');
+    Logger.error('错误: $e');
   } finally {
     // 释放资源
     client.dispose();

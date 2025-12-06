@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 import 'websocket_client.dart';
 import 'messages/messages.dart';
 
@@ -37,7 +38,7 @@ class BilibiliLiveWebSocket {
 
       await _connectInternal();
     } catch (e) {
-      debugPrint('[LiveWebSocket] 连接失败: $e');
+      Logger.error('[LiveWebSocket] 连接失败: $e');
       onError?.call('连接失败: $e');
       _scheduleReconnect();
     }
@@ -106,13 +107,13 @@ class BilibiliLiveWebSocket {
     try {
       onMessage?.call(message);
     } catch (e) {
-      debugPrint('[LiveWebSocket] 处理消息回调失败: $e');
+      Logger.error('[LiveWebSocket] 处理消息回调失败: $e');
     }
   }
 
   /// 处理错误
   void _handleError(String error) {
-    debugPrint('[LiveWebSocket] WebSocket 错误: $error');
+    Logger.error('[LiveWebSocket] WebSocket 错误: $error');
     onError?.call(error);
 
     // 错误时尝试重连
@@ -123,7 +124,7 @@ class BilibiliLiveWebSocket {
 
   /// 处理状态变化
   void _handleStateChange(WebSocketState state) {
-    debugPrint('[LiveWebSocket] 状态变化: $state');
+    Logger.info('[LiveWebSocket] 状态变化: $state');
 
     switch (state) {
       case WebSocketState.authenticated:
@@ -149,22 +150,22 @@ class BilibiliLiveWebSocket {
 
     // 检查重连次数
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      debugPrint('[LiveWebSocket] 达到最大重连次数，停止重连');
+      Logger.warning('[LiveWebSocket] 达到最大重连次数，停止重连');
       onError?.call('连接失败次数过多，已停止重连');
       _shouldReconnect = false;
       return;
     }
 
     _reconnectAttempts++;
-    debugPrint(
+    Logger.info(
       '[LiveWebSocket] 将在 ${_reconnectDelay.inSeconds} 秒后重连 (第 $_reconnectAttempts 次)',
     );
 
     _reconnectTimer = Timer(_reconnectDelay, () {
       if (_shouldReconnect) {
-        debugPrint('[LiveWebSocket] 开始重连...');
+        Logger.info('[LiveWebSocket] 开始重连...');
         _connectInternal().catchError((e) {
-          debugPrint('[LiveWebSocket] 重连失败: $e');
+          Logger.error('[LiveWebSocket] 重连失败: $e');
         });
       }
     });
