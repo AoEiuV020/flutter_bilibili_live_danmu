@@ -8,6 +8,7 @@ workspace:
   - apps/bilibili_live_danmu
   - apps/bilibili_live_danmu_proxy
   - packages/bilibili_live_api
+  - packages/bilibili_live_api_server
 
 dev_dependencies:
   melos: ^7.3.0
