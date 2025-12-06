@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
 
 void main() async {
@@ -18,5 +20,8 @@ void main() async {
   print('服务器已启动，访问 http://localhost:8080/health 检查状态');
 
   // 按需停止服务器
-  // await server.stop();
+  Timer(Duration(seconds: 3), () async {
+    await server.stop(); // 关闭监听套接字
+    print('服务器已关闭，程序即将退出');
+  });
 }

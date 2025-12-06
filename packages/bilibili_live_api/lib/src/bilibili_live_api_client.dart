@@ -245,6 +245,6 @@ class BilibiliLiveApiClient {
 
   /// 关闭客户端
   void dispose() {
-    _dio.close();
+    _dio.close(force: true);
   }
 }
