@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import '../utils/logger.dart';
 import 'websocket_client.dart';
 import 'messages/messages.dart';

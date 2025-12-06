@@ -5,3 +5,8 @@
 
 
 1. 日志级别处理好，不要都用debug, 另外加上info级别，
+
+
+1. packages/bilibili_live_api/pubspec.yaml 改成dart package,不依赖flutter，
+1. packages/bilibili_live_api搜索所有flutter相关的import，删除掉，要编译通过不报错，
+

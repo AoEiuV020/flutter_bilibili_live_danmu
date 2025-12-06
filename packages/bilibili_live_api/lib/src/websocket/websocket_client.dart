@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../utils/logger.dart';
 import 'websocket_protocol.dart';
