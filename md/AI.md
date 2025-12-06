@@ -51,3 +51,18 @@
 1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart:45 干嘛非要搞不同， 新加的服务设置板块就给我好好参考原有的设置，添加一个板块不就好了，我说了唯一特殊在于工作状态隐藏ui，其他都可以正常处理，
 
 1. 我™说的不是ui啊， 是settingsManager，你给我看好了其他设置是怎么实现的再重写服务设置， 
+
+
+1. apps/bilibili_live_danmu/lib/models/settings.dart:272 这块又是url encode又是map的也太坑了， 普通一点， 一个设置一个key，
+1. 注意同样内容key要个apps/bilibili_live_danmu/lib/home_page.dart统一，
+
+1. apps/bilibili_live_danmu/lib/models/settings.dart:213 啥玩意儿这一堆key有屁用，和其他设置一样的处理啊， 
+
+1. apps/bilibili_live_danmu/lib/home_page.dart:117 后端地址也得保存， 
+
+1. apps/bilibili_live_danmu/lib/home_page.dart:266 代理模式下app id 和code都可以为空，
+
+1. 你™我只让你改成可空， 没让你禁用掉，
+
+1. apps/bilibili_live_danmu/lib/home_page.dart:166 可空字段使用需要判断， 这还要我教你吗？
+1. 而且client.start里这些字段code/appId早该改成可空的了，

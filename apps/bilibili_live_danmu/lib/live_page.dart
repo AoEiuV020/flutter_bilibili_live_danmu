@@ -13,8 +13,8 @@ import 'utils/tts_consumer.dart';
 import 'viewmodels/live_page_viewmodel.dart';
 
 class LivePage extends StatefulWidget {
-  final int appId;
-  final String code;
+  final int? appId;
+  final String? code;
   final AppStartData startData;
   final BilibiliLiveApiClient apiClient;
   final bool enableHttpServer;
@@ -24,8 +24,8 @@ class LivePage extends StatefulWidget {
 
   const LivePage({
     super.key,
-    required this.appId,
-    required this.code,
+    this.appId,
+    this.code,
     required this.startData,
     required this.apiClient,
     this.enableHttpServer = false,

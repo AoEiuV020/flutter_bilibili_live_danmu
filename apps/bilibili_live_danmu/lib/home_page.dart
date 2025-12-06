@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'models/settings.dart';
 import 'live_page.dart';
@@ -88,19 +87,20 @@ class _HomePageState extends State<HomePage> {
       // 加载 SettingsManager
       await _settingsManager.load();
 
-      // 从SharedPreferences加载保存的配置
-      final prefs = await SharedPreferences.getInstance();
-
       setState(() {
-        _appIdController.text =
-            prefs.getString('app_id') ?? config['app_id'] ?? '';
-        _accessKeyIdController.text =
-            prefs.getString('access_key_id') ?? config['access_key_id'] ?? '';
-        _accessKeySecretController.text =
-            prefs.getString('access_key_secret') ??
-            config['access_key_secret'] ??
-            '';
-        _codeController.text = prefs.getString('code') ?? config['code'] ?? '';
+        final creds = _settingsManager.credentialsSettings;
+        _appIdController.text = creds.appId.isNotEmpty
+            ? creds.appId
+            : (config['app_id'] ?? '');
+        _accessKeyIdController.text = creds.accessKeyId.isNotEmpty
+            ? creds.accessKeyId
+            : (config['access_key_id'] ?? '');
+        _accessKeySecretController.text = creds.accessKeySecret.isNotEmpty
+            ? creds.accessKeySecret
+            : (config['access_key_secret'] ?? '');
+        _codeController.text = creds.code.isNotEmpty
+            ? creds.code
+            : (config['code'] ?? '');
         // 加载后端地址
         _backendUrlController.text = _settingsManager.serverSettings.backendUrl;
       });
@@ -115,11 +115,20 @@ class _HomePageState extends State<HomePage> {
 
   /// 保存配置
   Future<void> _saveConfig() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_id', _appIdController.text);
-    await prefs.setString('access_key_id', _accessKeyIdController.text);
-    await prefs.setString('access_key_secret', _accessKeySecretController.text);
-    await prefs.setString('code', _codeController.text);
+    final credentials = CredentialsSettings(
+      appId: _appIdController.text,
+      accessKeyId: _accessKeyIdController.text,
+      accessKeySecret: _accessKeySecretController.text,
+      code: _codeController.text,
+    );
+    await _settingsManager.saveCredentialsSettings(credentials);
+
+    final serverSettings = ServerSettings(
+      backendUrl: _backendUrlController.text,
+      enableHttpServer: _settingsManager.serverSettings.enableHttpServer,
+      httpServerPort: _settingsManager.serverSettings.httpServerPort,
+    );
+    await _settingsManager.saveServerSettings(serverSettings);
   }
 
   /// 开始直播
@@ -153,8 +162,10 @@ class _HomePageState extends State<HomePage> {
 
       // 调用start接口，直接返回数据或抛出异常
       final startData = await client.start(
-        code: _codeController.text,
-        appId: int.parse(_appIdController.text),
+        code: _codeController.text.isEmpty ? null : _codeController.text,
+        appId: _appIdController.text.isEmpty
+            ? null
+            : int.tryParse(_appIdController.text),
       );
 
       if (!mounted) return;
@@ -164,13 +175,15 @@ class _HomePageState extends State<HomePage> {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => LivePage(
-            appId: int.parse(_appIdController.text),
+            appId: _appIdController.text.isEmpty
+                ? null
+                : int.tryParse(_appIdController.text),
             startData: startData,
             apiClient: client,
             enableHttpServer: serverSettings.enableHttpServer && !kIsWeb,
             accessKeyId: _accessKeyIdController.text,
             accessKeySecret: _accessKeySecretController.text,
-            code: _codeController.text,
+            code: _codeController.text.isEmpty ? null : _codeController.text,
             httpServerPort: serverSettings.httpServerPort,
           ),
         ),
@@ -260,6 +273,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
+                      // 代理模式下可以为空
+                      if (_isProxyMode) return null;
                       if (value == null || value.isEmpty) {
                         return '请输入App ID';
                       }
@@ -320,6 +335,8 @@ class _HomePageState extends State<HomePage> {
                       prefixIcon: Icon(Icons.code),
                     ),
                     validator: (value) {
+                      // 代理模式下可以为空
+                      if (_isProxyMode) return null;
                       if (value == null || value.isEmpty) {
                         return '请输入身份码';
                       }

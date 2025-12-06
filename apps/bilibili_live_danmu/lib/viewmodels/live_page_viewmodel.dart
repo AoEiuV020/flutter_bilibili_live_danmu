@@ -9,7 +9,7 @@ import '../utils/tts_manager.dart';
 
 /// LivePage ViewModel - 管理所有业务逻辑
 class LivePageViewModel {
-  final int appId;
+  final int? appId;
   final AppStartData startData;
   final BilibiliLiveApiClient apiClient;
   final MessageDispatcher messageDispatcher;
@@ -22,7 +22,7 @@ class LivePageViewModel {
   bool _isFirstConnection = true;
 
   LivePageViewModel({
-    required this.appId,
+    this.appId,
     required this.startData,
     required this.apiClient,
     required this.messageDispatcher,

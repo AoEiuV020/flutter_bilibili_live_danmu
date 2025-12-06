@@ -82,10 +82,10 @@ class BilibiliLiveApiClient {
   /// 开启项目第一步，平台会根据入参进行鉴权校验。
   /// 鉴权通过后，返回长连信息、场次信息和主播信息。
   ///
-  /// [code] 主播身份码
-  /// [appId] 项目ID (int64)
+  /// [code] 主播身份码（使用代理模式时可为空）
+  /// [appId] 项目ID (int64)（使用代理模式时可为空）
   /// 返回 [AppStartData] 项目开启数据
-  Future<AppStartData> start({required String code, required int appId}) async {
+  Future<AppStartData> start({String? code, int? appId}) async {
     try {
       final response = await _dio.post(
         '/v2/app/start',
@@ -108,7 +108,7 @@ class BilibiliLiveApiClient {
   ///
   /// [appId] 项目ID (int64)
   /// [gameId] 场次ID
-  Future<void> end({required int appId, required String gameId}) async {
+  Future<void> end({int? appId, required String gameId}) async {
     try {
       final response = await _dio.post(
         '/v2/app/end',

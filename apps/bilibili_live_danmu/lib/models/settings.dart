@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -143,6 +145,62 @@ class MessageFilterSettings {
   }
 }
 
+/// 凭证设置（API credentials）
+class CredentialsSettings {
+  final String appId;
+  final String accessKeyId;
+  final String accessKeySecret;
+  final String code;
+
+  const CredentialsSettings({
+    required this.appId,
+    required this.accessKeyId,
+    required this.accessKeySecret,
+    required this.code,
+  });
+
+  factory CredentialsSettings.defaultSettings() {
+    return const CredentialsSettings(
+      appId: '',
+      accessKeyId: '',
+      accessKeySecret: '',
+      code: '',
+    );
+  }
+
+  CredentialsSettings copyWith({
+    String? appId,
+    String? accessKeyId,
+    String? accessKeySecret,
+    String? code,
+  }) {
+    return CredentialsSettings(
+      appId: appId ?? this.appId,
+      accessKeyId: accessKeyId ?? this.accessKeyId,
+      accessKeySecret: accessKeySecret ?? this.accessKeySecret,
+      code: code ?? this.code,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'appId': appId,
+      'accessKeyId': accessKeyId,
+      'accessKeySecret': accessKeySecret,
+      'code': code,
+    };
+  }
+
+  factory CredentialsSettings.fromJson(Map<String, dynamic> json) {
+    return CredentialsSettings(
+      appId: json['appId'] as String? ?? '',
+      accessKeyId: json['accessKeyId'] as String? ?? '',
+      accessKeySecret: json['accessKeySecret'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+    );
+  }
+}
+
 /// 服务器设置
 class ServerSettings {
   final String backendUrl;
@@ -194,17 +252,28 @@ class ServerSettings {
 
 /// 设置管理器
 class SettingsManager {
+  // SharedPreferences keys for display settings
   static const String _displaySettingsKey = 'display_settings';
+
+  // SharedPreferences keys for filter settings
   static const String _filterSettingsKey = 'filter_settings';
+
+  // SharedPreferences keys for credentials settings
+  static const String _credentialsSettingsKey = 'credentials_settings';
+
+  // SharedPreferences keys for server settings
   static const String _serverSettingsKey = 'server_settings';
 
   DisplaySettings _displaySettings = DisplaySettings.defaultSettings();
   MessageFilterSettings _filterSettings =
       MessageFilterSettings.defaultSettings();
+  CredentialsSettings _credentialsSettings =
+      CredentialsSettings.defaultSettings();
   ServerSettings _serverSettings = ServerSettings.defaultSettings();
 
   DisplaySettings get displaySettings => _displaySettings;
   MessageFilterSettings get filterSettings => _filterSettings;
+  CredentialsSettings get credentialsSettings => _credentialsSettings;
   ServerSettings get serverSettings => _serverSettings;
 
   /// 加载设置
@@ -215,22 +284,9 @@ class SettingsManager {
     final displayJson = prefs.getString(_displaySettingsKey);
     if (displayJson != null) {
       try {
+        // ignore: inference_failure_on_untyped_parameter
         _displaySettings = DisplaySettings.fromJson(
-          Map<String, dynamic>.from(
-            // ignore: inference_failure_on_untyped_parameter
-            Uri.decodeComponent(
-              displayJson,
-            ).split('&').fold<Map<String, dynamic>>({}, (map, item) {
-              final parts = item.split('=');
-              if (parts.length == 2) {
-                map[parts[0]] =
-                    int.tryParse(parts[1]) ??
-                    double.tryParse(parts[1]) ??
-                    parts[1];
-              }
-              return map;
-            }),
-          ),
+          Map<String, dynamic>.from(jsonDecode(displayJson)),
         );
       } catch (e) {
         // 解析失败，使用默认设置
@@ -241,19 +297,22 @@ class SettingsManager {
     final filterJson = prefs.getString(_filterSettingsKey);
     if (filterJson != null) {
       try {
+        // ignore: inference_failure_on_untyped_parameter
         _filterSettings = MessageFilterSettings.fromJson(
-          Map<String, dynamic>.from(
-            // ignore: inference_failure_on_untyped_parameter
-            Uri.decodeComponent(
-              filterJson,
-            ).split('&').fold<Map<String, dynamic>>({}, (map, item) {
-              final parts = item.split('=');
-              if (parts.length == 2) {
-                map[parts[0]] = parts[1] == 'true';
-              }
-              return map;
-            }),
-          ),
+          Map<String, dynamic>.from(jsonDecode(filterJson)),
+        );
+      } catch (e) {
+        // 解析失败，使用默认设置
+      }
+    }
+
+    // 加载凭证设置
+    final credentialsJson = prefs.getString(_credentialsSettingsKey);
+    if (credentialsJson != null) {
+      try {
+        // ignore: inference_failure_on_untyped_parameter
+        _credentialsSettings = CredentialsSettings.fromJson(
+          Map<String, dynamic>.from(jsonDecode(credentialsJson)),
         );
       } catch (e) {
         // 解析失败，使用默认设置
@@ -264,20 +323,9 @@ class SettingsManager {
     final serverJson = prefs.getString(_serverSettingsKey);
     if (serverJson != null) {
       try {
+        // ignore: inference_failure_on_untyped_parameter
         _serverSettings = ServerSettings.fromJson(
-          Map<String, dynamic>.from(
-            // ignore: inference_failure_on_untyped_parameter
-            Uri.decodeComponent(
-              serverJson,
-            ).split('&').fold<Map<String, dynamic>>({}, (map, item) {
-              final parts = item.split('=');
-              if (parts.length == 2) {
-                map[parts[0]] =
-                    int.tryParse(parts[1]) ?? parts[1] == 'true' ?? parts[1];
-              }
-              return map;
-            }),
-          ),
+          Map<String, dynamic>.from(jsonDecode(serverJson)),
         );
       } catch (e) {
         // 解析失败，使用默认设置
@@ -289,25 +337,23 @@ class SettingsManager {
   Future<void> saveDisplaySettings(DisplaySettings settings) async {
     _displaySettings = settings;
     final prefs = await SharedPreferences.getInstance();
-    final json = settings.toJson();
-    await prefs.setString(
-      _displaySettingsKey,
-      Uri.encodeComponent(
-        json.entries.map((e) => '${e.key}=${e.value}').join('&'),
-      ),
-    );
+    await prefs.setString(_displaySettingsKey, jsonEncode(settings.toJson()));
   }
 
   /// 保存过滤设置
   Future<void> saveFilterSettings(MessageFilterSettings settings) async {
     _filterSettings = settings;
     final prefs = await SharedPreferences.getInstance();
-    final json = settings.toJson();
+    await prefs.setString(_filterSettingsKey, jsonEncode(settings.toJson()));
+  }
+
+  /// 保存凭证设置
+  Future<void> saveCredentialsSettings(CredentialsSettings settings) async {
+    _credentialsSettings = settings;
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      _filterSettingsKey,
-      Uri.encodeComponent(
-        json.entries.map((e) => '${e.key}=${e.value}').join('&'),
-      ),
+      _credentialsSettingsKey,
+      jsonEncode(settings.toJson()),
     );
   }
 
@@ -315,12 +361,6 @@ class SettingsManager {
   Future<void> saveServerSettings(ServerSettings settings) async {
     _serverSettings = settings;
     final prefs = await SharedPreferences.getInstance();
-    final json = settings.toJson();
-    await prefs.setString(
-      _serverSettingsKey,
-      Uri.encodeComponent(
-        json.entries.map((e) => '${e.key}=${e.value}').join('&'),
-      ),
-    );
+    await prefs.setString(_serverSettingsKey, jsonEncode(settings.toJson()));
   }
 }
