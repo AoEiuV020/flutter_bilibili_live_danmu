@@ -1,16 +1,17 @@
 name: bilibili_live_danmu_proxy
-description: A sample command-line application.
+description: Bilibili Live API HTTP proxy server command-line application.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/AoEiuV020/flutter_bilibili_live_danmu
 
 environment:
   sdk: ^3.10.3
 
 resolution: workspace
 
-# Add regular dependencies here.
 dependencies:
-  path: ^1.9.0
+  bilibili_live_api_server:
+    path: ../../packages/bilibili_live_api_server
+  args: ^2.6.0
 
 dev_dependencies:
   lints: ^6.0.0

@@ -1,16 +1,18 @@
 name: bilibili_live_api_server
-description: A starting point for Dart libraries or applications.
+description: Bilibili Live API HTTP proxy server that forwards requests to bilibili_live_api.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/AoEiuV020/flutter_bilibili_live_danmu
 
 environment:
   sdk: ^3.10.3
 
 resolution: workspace
 
-# Add regular dependencies here.
 dependencies:
-  # path: ^1.9.0
+  bilibili_live_api:
+    path: ../bilibili_live_api
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
 
 dev_dependencies:
   lints: ^6.0.0
