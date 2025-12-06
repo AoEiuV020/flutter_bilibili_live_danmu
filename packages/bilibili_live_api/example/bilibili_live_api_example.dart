@@ -1,5 +1,5 @@
 import 'package:bilibili_live_api/bilibili_live_api.dart';
-import '../lib/src/utils/logger.dart';
+import 'package:bilibili_live_api/src/utils/logger.dart';
 import 'example_config.dart';
 
 void main() async {

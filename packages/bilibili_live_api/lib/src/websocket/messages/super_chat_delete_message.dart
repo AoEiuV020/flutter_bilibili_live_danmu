@@ -4,6 +4,7 @@ import 'live_message.dart';
 class SuperChatDeleteMessage extends LiveMessage {
   final int roomId;
   final List<int> messageIds;
+  @override
   final String msgId;
 
   SuperChatDeleteMessage({

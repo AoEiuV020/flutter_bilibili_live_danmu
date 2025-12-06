@@ -9,6 +9,7 @@ class SuperChatMessage extends LiveMessage {
   final String? uface;
   final int messageId;
   final String message;
+  @override
   final String msgId;
   final int rmb;
   final int timestamp;

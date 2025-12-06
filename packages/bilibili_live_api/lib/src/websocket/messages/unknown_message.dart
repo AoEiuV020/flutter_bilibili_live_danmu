@@ -4,7 +4,7 @@ import 'live_message.dart';
 class UnknownMessage extends LiveMessage {
   final Map<String, dynamic> data;
 
-  UnknownMessage({required String cmd, required this.data}) : super(cmd: cmd);
+  UnknownMessage({required super.cmd, required this.data});
 
   @override
   String toString() {

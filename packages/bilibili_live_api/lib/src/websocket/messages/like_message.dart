@@ -13,6 +13,7 @@ class LikeMessage extends LiveMessage {
   final bool fansMedalWearingStatus;
   final String? fansMedalName;
   final int fansMedialLevel;
+  @override
   final String msgId;
 
   LikeMessage({

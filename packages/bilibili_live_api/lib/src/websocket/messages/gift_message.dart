@@ -17,6 +17,7 @@ class GiftMessage extends LiveMessage {
   final bool fansMedalWearingStatus;
   final int guardLevel;
   final int timestamp;
+  @override
   final String msgId;
   final String? giftIcon;
 

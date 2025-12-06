@@ -7,6 +7,7 @@ class DanmakuMessage extends LiveMessage {
   final String? unionId;
   final String uname;
   final String msg;
+  @override
   final String msgId;
   final int timestamp;
   final String? uface;

@@ -14,6 +14,7 @@ class GuardMessage extends LiveMessage {
   final int fansMedialLevel;
   final String? fansMedalName;
   final bool fansMedalWearingStatus;
+  @override
   final String msgId;
   final int timestamp;
 
