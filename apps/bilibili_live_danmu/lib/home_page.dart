@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'models/settings.dart';
 import 'live_page.dart';
+import 'options/app_options.dart';
 import 'settings_page.dart';
 import 'utils/tts_manager.dart';
 
@@ -29,6 +30,9 @@ class _HomePageState extends State<HomePage> {
   // 服务器设置
   late SettingsManager _settingsManager;
 
+  /// 命令行参数
+  AppOptions get _appOptions => AppOptions.instance;
+
   /// 是否使用后端代理模式
   bool get _isProxyMode => _backendUrlController.text.trim().isNotEmpty;
 
@@ -36,24 +40,32 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _settingsManager = SettingsManager();
-    _loadConfig();
-    _initializeTts();
+    _initializeAsync();
   }
 
-  /// 初始化 TTS（不阻塞页面加载）
-  void _initializeTts() {
-    // 在后台初始化 TTS，不等待结果，不影响页面加载
-    TtsManager.instance
-        .initialize()
-        .timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            debugPrint('TTS 初始化超时（10秒）');
-          },
-        )
-        .catchError((e) {
-          debugPrint('TTS 初始化失败: $e');
-        });
+  /// 异步初始化：加载配置和 TTS，完成后检查自动连接
+  void _initializeAsync() async {
+    try {
+      await Future.wait([_loadConfig(), _initializeTts()]);
+      // 所有初始化完成后，检查是否需要自动开始
+      _checkAutoStart();
+    } catch (e) {
+      debugPrint('初始化异常: $e');
+    }
+  }
+
+  /// 初始化 TTS（异步）
+  Future<void> _initializeTts() async {
+    try {
+      await TtsManager.instance.initialize().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('TTS 初始化超时（10秒）');
+        },
+      );
+    } catch (e) {
+      debugPrint('TTS 初始化失败: $e');
+    }
   }
 
   @override
@@ -69,19 +81,24 @@ class _HomePageState extends State<HomePage> {
   /// 加载默认配置
   Future<void> _loadConfig() async {
     try {
-      // 从assets加载配置文件
-      final configString = await rootBundle.loadString(
-        'assets/config.properties',
-      );
-      final lines = configString.split('\n');
-      final config = <String, String>{};
+      // 从assets加载配置文件（优先级最低，作为兜底）
+      final assetsConfig = <String, String>{};
+      try {
+        final configString = await rootBundle.loadString(
+          'assets/config.properties',
+        );
+        final lines = configString.split('\n');
 
-      for (final line in lines) {
-        if (line.trim().isEmpty || line.startsWith('#')) continue;
-        final parts = line.split('=');
-        if (parts.length == 2) {
-          config[parts[0].trim()] = parts[1].trim();
+        for (final line in lines) {
+          if (line.trim().isEmpty || line.startsWith('#')) continue;
+          final parts = line.split('=');
+          if (parts.length == 2) {
+            assetsConfig[parts[0].trim()] = parts[1].trim();
+          }
         }
+      } catch (e) {
+        // assets 配置文件可能不存在，不影响继续执行
+        debugPrint('assets 配置文件读取失败: $e');
       }
 
       // 加载 SettingsManager
@@ -89,20 +106,29 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         final creds = _settingsManager.credentialsSettings;
-        _appIdController.text = creds.appId.isNotEmpty
-            ? creds.appId
-            : (config['app_id'] ?? '');
-        _accessKeyIdController.text = creds.accessKeyId.isNotEmpty
-            ? creds.accessKeyId
-            : (config['access_key_id'] ?? '');
-        _accessKeySecretController.text = creds.accessKeySecret.isNotEmpty
-            ? creds.accessKeySecret
-            : (config['access_key_secret'] ?? '');
-        _codeController.text = creds.code.isNotEmpty
-            ? creds.code
-            : (config['code'] ?? '');
-        // 加载后端地址
-        _backendUrlController.text = _settingsManager.serverSettings.backendUrl;
+        // 优先级：命令行参数 > --config 文件 > 已保存设置 > assets 配置
+        _appIdController.text =
+            _appOptions.appId ??
+            (creds.appId.isNotEmpty
+                ? creds.appId
+                : (assetsConfig['app_id'] ?? ''));
+        _accessKeyIdController.text =
+            _appOptions.accessKeyId ??
+            (creds.accessKeyId.isNotEmpty
+                ? creds.accessKeyId
+                : (assetsConfig['access_key_id'] ?? ''));
+        _accessKeySecretController.text =
+            _appOptions.accessKeySecret ??
+            (creds.accessKeySecret.isNotEmpty
+                ? creds.accessKeySecret
+                : (assetsConfig['access_key_secret'] ?? ''));
+        _codeController.text =
+            _appOptions.code ??
+            (creds.code.isNotEmpty ? creds.code : (assetsConfig['code'] ?? ''));
+        // 加载后端地址（优先使用命令行参数或已保存设置）
+        _backendUrlController.text =
+            _appOptions.backendUrl ??
+            _settingsManager.serverSettings.backendUrl;
       });
     } catch (e) {
       if (mounted) {
@@ -110,6 +136,18 @@ class _HomePageState extends State<HomePage> {
           context,
         ).showSnackBar(SnackBar(content: Text('加载配置失败: $e')));
       }
+    }
+  }
+
+  /// 检查是否自动开始直播
+  void _checkAutoStart() {
+    if (_appOptions.canAutoStart && mounted) {
+      // 延迟执行，确保 UI 已经构建完成
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isLoading) {
+          _startLive();
+        }
+      });
     }
   }
 

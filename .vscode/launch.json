@@ -9,6 +9,20 @@
             "cwd": "apps/bilibili_live_danmu",
             "request": "launch",
             "type": "dart"
+        },
+        {
+            "name": "bilibili_live_danmu(args)",
+            "cwd": "apps/bilibili_live_danmu",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-entrypoint-args=--auto-start",
+                "--dart-entrypoint-args=--backend-url=http://127.0.0.1:8080",
+                "--web-browser-flag=--disable-web-security",
+                "--web-port=9080",
+                "--web-hostname=127.0.0.1",
+                "--web-launch-url=http://127.0.0.1:9080/?backend-url=http://127.0.0.1:8080&auto-start",
+            ]
         }
     ]
 }

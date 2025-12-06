@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
+import 'options/app_options.dart';
+import 'options/parse.dart';
 
-void main() {
+void main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 解析命令行参数并保存为全局实例
+  final options = await parseAppOptions(args);
+  AppOptions.setInstance(options);
+
   runApp(const MyApp());
 }
 

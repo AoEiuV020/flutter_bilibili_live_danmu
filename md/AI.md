@@ -68,3 +68,18 @@
 1. 而且client.start里这些字段code/appId早该改成可空的了，
 
 1. packages/bilibili_live_api_server/lib/src/bilibili_live_api_server.dart:260 添加针对 packages/bilibili_live_api/lib/src/models/response_parser.dart:2 的处理，
+
+1. 添加初始化参数处理，参考 apps/bilibili_live_danmu/lib/options/parse.dart，这是其他项目扣来的代码，没用的都删了， 
+1. 实际参数参考 apps/bilibili_live_danmu_proxy/bin/bilibili_live_danmu_proxy.dart apps/bilibili_live_danmu/lib/home_page.dart ，首页填写的都要支持从参数获取，
+1. 在apps/bilibili_live_danmu/lib/main.dart添加参数解析，保存为静态变量，方便全局访问，
+1. 参数相关代码尽量都放在 apps/bilibili_live_danmu/lib/options 目录下，方便管理，
+1. home使用时优先使用参数变量，如果判断参数包含必填项目，就自动点击开始按钮，
+
+1. 参数加上config文件路径，直接读取，优先级比其他参数低，内容和apps/bilibili_live_danmu/assets/config.properties一致，
+
+1. 你™谁叫你把home里的assets/config.properties处理删除了，折合我叫你做的事有任何关系吗，
+这个assets是兜底的，优先级最低，不要删，
+
+1. apps/bilibili_live_danmu/lib/home_page.dart:127这个处理不太好， 检查自动连接应该仅启动时，改到 initState 等其他完成后再执行，
+
+1. _initializeTts 改成异步， 实际上initialize本来就是异步的， 然后一起等待都完成了才检查自动连接，
