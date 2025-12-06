@@ -143,17 +143,69 @@ class MessageFilterSettings {
   }
 }
 
+/// 服务器设置
+class ServerSettings {
+  final String backendUrl;
+  final bool enableHttpServer;
+  final int httpServerPort;
+
+  const ServerSettings({
+    required this.backendUrl,
+    required this.enableHttpServer,
+    required this.httpServerPort,
+  });
+
+  factory ServerSettings.defaultSettings() {
+    return const ServerSettings(
+      backendUrl: '',
+      enableHttpServer: false,
+      httpServerPort: 18080,
+    );
+  }
+
+  ServerSettings copyWith({
+    String? backendUrl,
+    bool? enableHttpServer,
+    int? httpServerPort,
+  }) {
+    return ServerSettings(
+      backendUrl: backendUrl ?? this.backendUrl,
+      enableHttpServer: enableHttpServer ?? this.enableHttpServer,
+      httpServerPort: httpServerPort ?? this.httpServerPort,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'backendUrl': backendUrl,
+      'enableHttpServer': enableHttpServer,
+      'httpServerPort': httpServerPort,
+    };
+  }
+
+  factory ServerSettings.fromJson(Map<String, dynamic> json) {
+    return ServerSettings(
+      backendUrl: json['backendUrl'] as String? ?? '',
+      enableHttpServer: json['enableHttpServer'] as bool? ?? false,
+      httpServerPort: json['httpServerPort'] as int? ?? 18080,
+    );
+  }
+}
+
 /// 设置管理器
 class SettingsManager {
   static const String _displaySettingsKey = 'display_settings';
   static const String _filterSettingsKey = 'filter_settings';
+  static const String _serverSettingsKey = 'server_settings';
 
   DisplaySettings _displaySettings = DisplaySettings.defaultSettings();
   MessageFilterSettings _filterSettings =
       MessageFilterSettings.defaultSettings();
+  ServerSettings _serverSettings = ServerSettings.defaultSettings();
 
   DisplaySettings get displaySettings => _displaySettings;
   MessageFilterSettings get filterSettings => _filterSettings;
+  ServerSettings get serverSettings => _serverSettings;
 
   /// 加载设置
   Future<void> load() async {
@@ -207,6 +259,30 @@ class SettingsManager {
         // 解析失败，使用默认设置
       }
     }
+
+    // 加载服务器设置
+    final serverJson = prefs.getString(_serverSettingsKey);
+    if (serverJson != null) {
+      try {
+        _serverSettings = ServerSettings.fromJson(
+          Map<String, dynamic>.from(
+            // ignore: inference_failure_on_untyped_parameter
+            Uri.decodeComponent(
+              serverJson,
+            ).split('&').fold<Map<String, dynamic>>({}, (map, item) {
+              final parts = item.split('=');
+              if (parts.length == 2) {
+                map[parts[0]] =
+                    int.tryParse(parts[1]) ?? parts[1] == 'true' ?? parts[1];
+              }
+              return map;
+            }),
+          ),
+        );
+      } catch (e) {
+        // 解析失败，使用默认设置
+      }
+    }
   }
 
   /// 保存显示设置
@@ -229,6 +305,19 @@ class SettingsManager {
     final json = settings.toJson();
     await prefs.setString(
       _filterSettingsKey,
+      Uri.encodeComponent(
+        json.entries.map((e) => '${e.key}=${e.value}').join('&'),
+      ),
+    );
+  }
+
+  /// 保存服务器设置
+  Future<void> saveServerSettings(ServerSettings settings) async {
+    _serverSettings = settings;
+    final prefs = await SharedPreferences.getInstance();
+    final json = settings.toJson();
+    await prefs.setString(
+      _serverSettingsKey,
       Uri.encodeComponent(
         json.entries.map((e) => '${e.key}=${e.value}').join('&'),
       ),

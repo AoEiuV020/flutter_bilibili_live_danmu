@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../models/settings.dart';
 
@@ -5,15 +6,22 @@ import '../models/settings.dart';
 class SettingsPanel extends StatefulWidget {
   final SettingsManager settingsManager;
   final VoidCallback onClose;
-  final Function(DisplaySettings) onDisplaySettingsChanged;
-  final Function(MessageFilterSettings) onFilterSettingsChanged;
+  final Function(DisplaySettings)? onDisplaySettingsChanged;
+  final Function(MessageFilterSettings)? onFilterSettingsChanged;
+  final Function(ServerSettings)? onServerSettingsChanged;
+
+  /// 是否处于工作中（直播中）
+  /// 非工作模式下会显示服务器设置
+  final bool isWorking;
 
   const SettingsPanel({
     super.key,
     required this.settingsManager,
     required this.onClose,
-    required this.onDisplaySettingsChanged,
-    required this.onFilterSettingsChanged,
+    this.onDisplaySettingsChanged,
+    this.onFilterSettingsChanged,
+    this.onServerSettingsChanged,
+    this.isWorking = true,
   });
 
   @override
@@ -23,12 +31,27 @@ class SettingsPanel extends StatefulWidget {
 class _SettingsPanelState extends State<SettingsPanel> {
   late DisplaySettings _displaySettings;
   late MessageFilterSettings _filterSettings;
+  late ServerSettings _serverSettings;
+
+  final _backendUrlController = TextEditingController();
+  final _httpServerPortController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _displaySettings = widget.settingsManager.displaySettings;
     _filterSettings = widget.settingsManager.filterSettings;
+    _serverSettings = widget.settingsManager.serverSettings;
+
+    _backendUrlController.text = _serverSettings.backendUrl;
+    _httpServerPortController.text = _serverSettings.httpServerPort.toString();
+  }
+
+  @override
+  void dispose() {
+    _backendUrlController.dispose();
+    _httpServerPortController.dispose();
+    super.dispose();
   }
 
   void _updateDisplaySettings(DisplaySettings settings) {
@@ -36,7 +59,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
       _displaySettings = settings;
     });
     widget.settingsManager.saveDisplaySettings(settings);
-    widget.onDisplaySettingsChanged(settings);
+    widget.onDisplaySettingsChanged?.call(settings);
   }
 
   void _updateFilterSettings(MessageFilterSettings settings) {
@@ -44,7 +67,15 @@ class _SettingsPanelState extends State<SettingsPanel> {
       _filterSettings = settings;
     });
     widget.settingsManager.saveFilterSettings(settings);
-    widget.onFilterSettingsChanged(settings);
+    widget.onFilterSettingsChanged?.call(settings);
+  }
+
+  void _updateServerSettings(ServerSettings settings) {
+    setState(() {
+      _serverSettings = settings;
+    });
+    widget.settingsManager.saveServerSettings(settings);
+    widget.onServerSettingsChanged?.call(settings);
   }
 
   @override
@@ -95,6 +126,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // 非工作模式下显示服务器设置
+                if (!widget.isWorking) ...[
+                  _buildServerSection(),
+                  const SizedBox(height: 24),
+                ],
                 _buildDisplaySection(),
                 const SizedBox(height: 24),
                 _buildFilterSection(),
@@ -353,6 +389,81 @@ class _SettingsPanelState extends State<SettingsPanel> {
         onChanged(color);
         Navigator.of(context).pop();
       },
+    );
+  }
+
+  /// 构建服务器设置区域（仅非工作模式下显示）
+  Widget _buildServerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '服务器设置',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        // 后端地址输入框
+        TextField(
+          controller: _backendUrlController,
+          decoration: const InputDecoration(
+            labelText: '后端地址（可选）',
+            hintText: '留空使用官方 API',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.cloud),
+          ),
+          onChanged: (_) {
+            final port = int.tryParse(_httpServerPortController.text) ?? 18080;
+            _updateServerSettings(
+              ServerSettings(
+                backendUrl: _backendUrlController.text,
+                enableHttpServer: _serverSettings.enableHttpServer,
+                httpServerPort: port,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        // HTTP 服务开关（非 Web 端）
+        if (!kIsWeb) ...[
+          _buildSwitchSetting(
+            '启用 HTTP 代理服务',
+            _serverSettings.enableHttpServer,
+            (value) {
+              final port =
+                  int.tryParse(_httpServerPortController.text) ?? 18080;
+              _updateServerSettings(
+                ServerSettings(
+                  backendUrl: _backendUrlController.text,
+                  enableHttpServer: value,
+                  httpServerPort: port,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          // 服务端口
+          TextField(
+            controller: _httpServerPortController,
+            decoration: const InputDecoration(
+              labelText: 'HTTP 服务端口',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.numbers),
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (_) {
+              final port =
+                  int.tryParse(_httpServerPortController.text) ?? 18080;
+              _updateServerSettings(
+                ServerSettings(
+                  backendUrl: _backendUrlController.text,
+                  enableHttpServer: _serverSettings.enableHttpServer,
+                  httpServerPort: port,
+                ),
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 }

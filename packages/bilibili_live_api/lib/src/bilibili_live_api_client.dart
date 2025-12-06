@@ -9,22 +9,51 @@ import 'websocket/bilibili_live_websocket.dart';
 
 /// B站直播开放平台API客户端
 class BilibiliLiveApiClient {
-  static const String _baseUrl = 'https://live-open.biliapi.com';
+  /// 官方 API 地址
+  static const String officialBaseUrl = 'https://live-open.biliapi.com';
 
   late final Dio _dio;
-  final String accessKeyId;
-  final String accessKeySecret;
 
+  /// Access Key ID（使用代理服务器时可为空）
+  final String? accessKeyId;
+
+  /// Access Key Secret（使用代理服务器时可为空）
+  final String? accessKeySecret;
+
+  /// 自定义后端地址（可选，为空时使用官方 API）
+  final String? baseUrl;
+
+  /// 是否使用代理服务器模式（不需要认证）
+  bool get isProxyMode => baseUrl != null;
+
+  /// 创建 API 客户端
+  ///
+  /// 两种模式：
+  /// 1. 直连官方 API：需要提供 [accessKeyId] 和 [accessKeySecret]
+  /// 2. 通过代理服务器：只需提供 [baseUrl]，不需要 accessKey
   BilibiliLiveApiClient({
-    required this.accessKeyId,
-    required this.accessKeySecret,
+    this.accessKeyId,
+    this.accessKeySecret,
+    this.baseUrl,
     Duration? connectTimeout,
     Duration? receiveTimeout,
     bool enableLogging = true,
   }) {
+    // 验证参数：非代理模式下必须提供 accessKey
+    if (!isProxyMode) {
+      if (accessKeyId == null) {
+        throw ArgumentError('直连官方 API 时 accessKeyId 不能为空');
+      }
+      if (accessKeySecret == null) {
+        throw ArgumentError('直连官方 API 时 accessKeySecret 不能为空');
+      }
+    }
+
+    final effectiveBaseUrl = isProxyMode ? baseUrl! : officialBaseUrl;
+
     _dio = Dio(
       BaseOptions(
-        baseUrl: _baseUrl,
+        baseUrl: effectiveBaseUrl,
         connectTimeout: connectTimeout ?? const Duration(seconds: 30),
         receiveTimeout: receiveTimeout ?? const Duration(seconds: 30),
         contentType: Headers.jsonContentType,
@@ -32,13 +61,15 @@ class BilibiliLiveApiClient {
       ),
     );
 
-    // 添加签名拦截器
-    _dio.interceptors.add(
-      SignatureInterceptor(
-        accessKeyId: accessKeyId,
-        accessKeySecret: accessKeySecret,
-      ),
-    );
+    // 只有直连官方 API 时才添加签名拦截器
+    if (!isProxyMode) {
+      _dio.interceptors.add(
+        SignatureInterceptor(
+          accessKeyId: accessKeyId!,
+          accessKeySecret: accessKeySecret!,
+        ),
+      );
+    }
 
     // 添加日志拦截器
     if (enableLogging) {

@@ -35,11 +35,19 @@ class BilibiliLiveApiServer {
     }
 
     // 初始化 API 客户端
-    _apiClient = BilibiliLiveApiClient(
-      accessKeyId: _config.accessKeyId,
-      accessKeySecret: _config.accessKeySecret,
-      enableLogging: _config.enableLogging,
-    );
+    // 如果配置了后端地址，使用代理模式；否则使用直连模式
+    if (_config.backendUrl != null && _config.backendUrl!.isNotEmpty) {
+      _apiClient = BilibiliLiveApiClient(
+        baseUrl: _config.backendUrl,
+        enableLogging: _config.enableLogging,
+      );
+    } else {
+      _apiClient = BilibiliLiveApiClient(
+        accessKeyId: _config.accessKeyId,
+        accessKeySecret: _config.accessKeySecret,
+        enableLogging: _config.enableLogging,
+      );
+    }
 
     // 创建路由
     final router = _createRouter();

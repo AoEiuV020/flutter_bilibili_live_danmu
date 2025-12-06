@@ -29,8 +29,12 @@ void main(List<String> arguments) async {
       defaultsTo: _defaultPort.toString(),
     )
     ..addOption('address', abbr: 'a', help: '监听地址', defaultsTo: _defaultAddress)
-    ..addOption('access-key-id', help: 'Access Key ID')
-    ..addOption('access-key-secret', help: 'Access Key Secret')
+    ..addOption('access-key-id', help: 'Access Key ID（与 backend-url 二选一）')
+    ..addOption(
+      'access-key-secret',
+      help: 'Access Key Secret（与 backend-url 二选一）',
+    )
+    ..addOption('backend-url', help: '后端代理地址（与 accessKey 二选一）')
     ..addOption('code', help: '主播身份码')
     ..addOption('app-id', help: '项目 ID')
     ..addFlag('logging', help: '启用请求日志', defaultsTo: true)
@@ -93,6 +97,7 @@ void _printUsage(ArgParser parser) {
   print(
     '  bilibili_live_danmu_proxy --access-key-id=xxx --access-key-secret=yyy',
   );
+  print('  bilibili_live_danmu_proxy --backend-url=http://localhost:3000');
   print('  bilibili_live_danmu_proxy -p 3000 -a localhost');
 }
 
@@ -115,6 +120,7 @@ Future<ServerConfig> _loadConfig(ArgResults args) async {
   // 获取命令行参数
   final accessKeyId = args['access-key-id'] as String?;
   final accessKeySecret = args['access-key-secret'] as String?;
+  final backendUrl = args['backend-url'] as String?;
   final code = args['code'] as String?;
   final appIdStr = args['app-id'] as String?;
   final enableLogging = args['logging'] as bool;
@@ -129,6 +135,7 @@ Future<ServerConfig> _loadConfig(ArgResults args) async {
     fileConfig: fileConfig,
     accessKeyId: accessKeyId,
     accessKeySecret: accessKeySecret,
+    backendUrl: backendUrl,
     code: code,
     appId: appId,
     enableLogging: enableLogging,

@@ -1,8 +1,13 @@
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
+import 'models/settings.dart';
 import 'live_page.dart';
+import 'settings_page.dart';
 import 'utils/tts_manager.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,12 +23,20 @@ class _HomePageState extends State<HomePage> {
   final _accessKeyIdController = TextEditingController();
   final _accessKeySecretController = TextEditingController();
   final _codeController = TextEditingController();
+  final _backendUrlController = TextEditingController();
 
   bool _isLoading = false;
+
+  // 服务器设置
+  late SettingsManager _settingsManager;
+
+  /// 是否使用后端代理模式
+  bool get _isProxyMode => _backendUrlController.text.trim().isNotEmpty;
 
   @override
   void initState() {
     super.initState();
+    _settingsManager = SettingsManager();
     _loadConfig();
     _initializeTts();
   }
@@ -50,6 +63,7 @@ class _HomePageState extends State<HomePage> {
     _accessKeyIdController.dispose();
     _accessKeySecretController.dispose();
     _codeController.dispose();
+    _backendUrlController.dispose();
     super.dispose();
   }
 
@@ -71,6 +85,9 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
+      // 加载 SettingsManager
+      await _settingsManager.load();
+
       // 从SharedPreferences加载保存的配置
       final prefs = await SharedPreferences.getInstance();
 
@@ -84,6 +101,8 @@ class _HomePageState extends State<HomePage> {
             config['access_key_secret'] ??
             '';
         _codeController.text = prefs.getString('code') ?? config['code'] ?? '';
+        // 加载后端地址
+        _backendUrlController.text = _settingsManager.serverSettings.backendUrl;
       });
     } catch (e) {
       if (mounted) {
@@ -118,10 +137,19 @@ class _HomePageState extends State<HomePage> {
       await _saveConfig();
 
       // 创建API客户端
-      final client = BilibiliLiveApiClient(
-        accessKeyId: _accessKeyIdController.text,
-        accessKeySecret: _accessKeySecretController.text,
-      );
+      final BilibiliLiveApiClient client;
+      if (_isProxyMode) {
+        // 使用后端代理模式
+        client = BilibiliLiveApiClient(
+          baseUrl: _backendUrlController.text.trim(),
+        );
+      } else {
+        // 直连官方 API 模式
+        client = BilibiliLiveApiClient(
+          accessKeyId: _accessKeyIdController.text,
+          accessKeySecret: _accessKeySecretController.text,
+        );
+      }
 
       // 调用start接口，直接返回数据或抛出异常
       final startData = await client.start(
@@ -132,16 +160,24 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
 
       // 成功后跳转到第二页
+      final serverSettings = _settingsManager.serverSettings;
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => LivePage(
             appId: int.parse(_appIdController.text),
             startData: startData,
             apiClient: client,
+            enableHttpServer: serverSettings.enableHttpServer && !kIsWeb,
+            accessKeyId: _accessKeyIdController.text,
+            accessKeySecret: _accessKeySecretController.text,
+            code: _codeController.text,
+            httpServerPort: serverSettings.httpServerPort,
           ),
         ),
       );
     } catch (e) {
+      debugPrint('启动失败: $e');
+      log('启动失败', error: e, stackTrace: e is Error ? e.stackTrace : null);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('启动失败: $e'), backgroundColor: Colors.red),
@@ -156,12 +192,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// 打开设置页面
+  Future<void> _openSettings() async {
+    // 进入设置页前先保存当前输入
+    await _saveConfig();
+    if (!mounted) return;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const SettingsPage()));
+    // 返回后重新加载配置
+    await _loadConfig();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('哔哩哔哩直播弹幕'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _openSettings,
+            tooltip: '设置',
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -175,6 +230,28 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const Icon(Icons.live_tv, size: 80, color: Colors.blue),
                   const SizedBox(height: 32),
+                  // Web 端显示后端地址输入框（必填）
+                  if (kIsWeb) ...[
+                    TextFormField(
+                      controller: _backendUrlController,
+                      decoration: const InputDecoration(
+                        labelText: '后端地址',
+                        hintText: '留空使用官方 API（Web 端需配置）',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.cloud),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    if (!_isProxyMode)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Web 端需要配置后端代理地址',
+                          style: TextStyle(color: Colors.orange),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                  ],
                   TextFormField(
                     controller: _appIdController,
                     decoration: const InputDecoration(
@@ -194,37 +271,48 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _accessKeyIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Access Key ID',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.key),
+                  // 非 Web 端且非代理模式时显示 AccessKey 字段
+                  if (!kIsWeb) ...[
+                    TextFormField(
+                      controller: _accessKeyIdController,
+                      decoration: InputDecoration(
+                        labelText: 'Access Key ID',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.key),
+                        enabled: !_isProxyMode,
+                        helperText: _isProxyMode ? '使用后端代理模式' : null,
+                      ),
+                      validator: (value) {
+                        // 代理模式下不需要验证
+                        if (_isProxyMode) return null;
+                        if (value == null || value.isEmpty) {
+                          return '请输入Access Key ID';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入Access Key ID';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _accessKeySecretController,
-                    decoration: const InputDecoration(
-                      labelText: 'Access Key Secret',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _accessKeySecretController,
+                      decoration: InputDecoration(
+                        labelText: 'Access Key Secret',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.lock),
+                        enabled: !_isProxyMode,
+                        helperText: _isProxyMode ? '使用后端代理模式' : null,
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        // 代理模式下不需要验证
+                        if (_isProxyMode) return null;
+                        if (value == null || value.isEmpty) {
+                          return '请输入Access Key Secret';
+                        }
+                        return null;
+                      },
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入Access Key Secret';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ],
                   TextFormField(
                     controller: _codeController,
                     decoration: const InputDecoration(
@@ -239,7 +327,7 @@ class _HomePageState extends State<HomePage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _startLive,
                     style: ElevatedButton.styleFrom(

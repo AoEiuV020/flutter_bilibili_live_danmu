@@ -1,10 +1,13 @@
 /// 服务器配置
 class ServerConfig {
-  /// Access Key ID（必需）
-  final String accessKeyId;
+  /// Access Key ID（使用后端代理时可为空）
+  final String? accessKeyId;
 
-  /// Access Key Secret（必需）
-  final String accessKeySecret;
+  /// Access Key Secret（使用后端代理时可为空）
+  final String? accessKeySecret;
+
+  /// 后端地址（可选，用于转发到另一个代理服务器）
+  final String? backendUrl;
 
   /// 主播身份码（可选）
   final String? code;
@@ -15,9 +18,18 @@ class ServerConfig {
   /// 是否启用日志（可选，默认 true）
   final bool enableLogging;
 
+  /// 是否使用代理模式（有后端地址或有完整的 accessKey）
+  bool get isValid =>
+      (backendUrl != null && backendUrl!.isNotEmpty) ||
+      (accessKeyId != null &&
+          accessKeyId!.isNotEmpty &&
+          accessKeySecret != null &&
+          accessKeySecret!.isNotEmpty);
+
   ServerConfig({
-    required this.accessKeyId,
-    required this.accessKeySecret,
+    this.accessKeyId,
+    this.accessKeySecret,
+    this.backendUrl,
     this.code,
     this.appId,
     this.enableLogging = true,
@@ -27,17 +39,26 @@ class ServerConfig {
   factory ServerConfig.fromMap(Map<String, String?> map) {
     final accessKeyId = map['access_key_id'];
     final accessKeySecret = map['access_key_secret'];
+    final backendUrl = map['backend_url'];
 
-    if (accessKeyId == null || accessKeyId.isEmpty) {
-      throw ArgumentError('access_key_id 不能为空');
-    }
-    if (accessKeySecret == null || accessKeySecret.isEmpty) {
-      throw ArgumentError('access_key_secret 不能为空');
+    // 必须有后端地址或完整的 accessKey
+    final hasBackend = backendUrl != null && backendUrl.isNotEmpty;
+    final hasAccessKey =
+        accessKeyId != null &&
+        accessKeyId.isNotEmpty &&
+        accessKeySecret != null &&
+        accessKeySecret.isNotEmpty;
+
+    if (!hasBackend && !hasAccessKey) {
+      throw ArgumentError(
+        '必须提供 backend_url 或同时提供 access_key_id 和 access_key_secret',
+      );
     }
 
     return ServerConfig(
       accessKeyId: accessKeyId,
       accessKeySecret: accessKeySecret,
+      backendUrl: backendUrl,
       code: map['code'],
       appId: _parseIntOrNull(map['app_id']),
       enableLogging: map['enable_logging'] != 'false',
@@ -74,6 +95,7 @@ class ServerConfig {
   ServerConfig copyWith({
     String? accessKeyId,
     String? accessKeySecret,
+    String? backendUrl,
     String? code,
     int? appId,
     bool? enableLogging,
@@ -81,6 +103,7 @@ class ServerConfig {
     return ServerConfig(
       accessKeyId: accessKeyId ?? this.accessKeyId,
       accessKeySecret: accessKeySecret ?? this.accessKeySecret,
+      backendUrl: backendUrl ?? this.backendUrl,
       code: code ?? this.code,
       appId: appId ?? this.appId,
       enableLogging: enableLogging ?? this.enableLogging,

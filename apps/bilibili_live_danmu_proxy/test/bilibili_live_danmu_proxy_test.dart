@@ -26,7 +26,7 @@ void main() {
       expect(merged.appId, 111);
     });
 
-    test('mergeWithArgs works without file config', () {
+    test('mergeWithArgs works without file config with accessKey', () {
       final config = ConfigLoader.mergeWithArgs(
         fileConfig: null,
         accessKeyId: 'arg_key_id',
@@ -41,18 +41,29 @@ void main() {
       expect(config.appId, 222);
     });
 
-    test(
-      'mergeWithArgs throws on missing required fields without file config',
-      () {
-        expect(
-          () => ConfigLoader.mergeWithArgs(
-            fileConfig: null,
-            accessKeyId: null,
-            accessKeySecret: 'secret',
-          ),
-          throwsA(isA<ArgumentError>()),
-        );
-      },
-    );
+    test('mergeWithArgs works with backendUrl only', () {
+      final config = ConfigLoader.mergeWithArgs(
+        fileConfig: null,
+        backendUrl: 'http://localhost:3000',
+        code: 'arg_code',
+      );
+
+      expect(config.backendUrl, 'http://localhost:3000');
+      expect(config.accessKeyId, isNull);
+      expect(config.accessKeySecret, isNull);
+      expect(config.code, 'arg_code');
+    });
+
+    test('mergeWithArgs throws on missing both backendUrl and accessKey', () {
+      expect(
+        () => ConfigLoader.mergeWithArgs(
+          fileConfig: null,
+          accessKeyId: null,
+          accessKeySecret: null,
+          backendUrl: null,
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

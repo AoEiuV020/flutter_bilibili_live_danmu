@@ -40,6 +40,8 @@ dependencies:
   # 项目依赖
   bilibili_live_api:
     path: ../../packages/bilibili_live_api
+  bilibili_live_api_server:
+    path: ../../packages/bilibili_live_api_server
   shared_preferences: ^2.3.3
   wakelock_plus: ^1.2.8
   flutter_tts: ^3.8.0

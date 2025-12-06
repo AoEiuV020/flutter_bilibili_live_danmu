@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
+import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
 import 'widgets/danmaku_list.dart';
 import 'widgets/settings_panel.dart';
 import 'models/settings.dart';
@@ -12,14 +14,24 @@ import 'viewmodels/live_page_viewmodel.dart';
 
 class LivePage extends StatefulWidget {
   final int appId;
+  final String code;
   final AppStartData startData;
   final BilibiliLiveApiClient apiClient;
+  final bool enableHttpServer;
+  final int httpServerPort;
+  final String? accessKeyId;
+  final String? accessKeySecret;
 
   const LivePage({
     super.key,
     required this.appId,
+    required this.code,
     required this.startData,
     required this.apiClient,
+    this.enableHttpServer = false,
+    this.httpServerPort = 18080,
+    this.accessKeyId,
+    this.accessKeySecret,
   });
 
   @override
@@ -37,6 +49,9 @@ class _LivePageState extends State<LivePage> {
   late LivePageViewModel _viewModel;
 
   DisplaySettings _displaySettings = DisplaySettings.defaultSettings();
+
+  /// HTTP 代理服务器
+  BilibiliLiveApiServer? _httpServer;
 
   @override
   void initState() {
@@ -73,11 +88,42 @@ class _LivePageState extends State<LivePage> {
     // 初始化 ViewModel（启动 WebSocket 等）
     await _viewModel.initialize();
 
+    // 启动 HTTP 服务器（如果启用且非 Web 端）
+    if (widget.enableHttpServer && !kIsWeb) {
+      await _startHttpServer();
+    }
+
     // 更新UI状态
     if (mounted) {
       setState(() {
         _displaySettings = _settingsManager.displaySettings;
       });
+    }
+  }
+
+  /// 启动 HTTP 代理服务器
+  Future<void> _startHttpServer() async {
+    try {
+      final config = ServerConfig(
+        accessKeyId: widget.accessKeyId,
+        accessKeySecret: widget.accessKeySecret,
+        code: widget.code,
+        appId: widget.appId,
+      );
+      _httpServer = BilibiliLiveApiServer(config: config);
+      await _httpServer!.start(port: widget.httpServerPort, address: '0.0.0.0');
+      debugPrint('HTTP 代理服务器已启动，端口: ${_httpServer!.port}');
+    } catch (e) {
+      debugPrint('HTTP 代理服务器启动失败: $e');
+    }
+  }
+
+  /// 停止 HTTP 代理服务器
+  Future<void> _stopHttpServer() async {
+    if (_httpServer != null) {
+      await _httpServer!.stop();
+      _httpServer = null;
+      debugPrint('HTTP 代理服务器已停止');
     }
   }
 
@@ -94,6 +140,7 @@ class _LivePageState extends State<LivePage> {
     _stopHideTimer();
     _messageDispatcher.dispose();
     _viewModel.dispose();
+    _stopHttpServer();
     super.dispose();
   }
 

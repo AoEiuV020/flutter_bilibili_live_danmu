@@ -25,3 +25,29 @@
 1. 监听必要的信号进行优雅关闭，
 1. 需要支持命令行参数解析， 配置文件路径可选，文件内的每一个参数都可以通过命令行参数传入覆盖，最终要保证accessKey两个变量一定有值，其他都可选，
 
+
+
+1. apps/bilibili_live_danmu 找个合适位置添加http服务开关，web端也显示但是不可开启，
+1. 在LivePage判断服务是否开启，开启则通过packages/bilibili_live_api_server创建服务，
+1. 页面关闭时关闭服务，
+1. apps/bilibili_live_danmu/lib/home_page.dart 添加一个输入框，填写后端地址，可空，空了代表默认当前代码的效果，也就是直接使用packages/bilibili_live_api请求官方接口，
+1. 后端地址非空的话把地址传进BilibiliLiveApiClient，调整BilibiliLiveApiClient支持可选后端地址参数，同时accessKey也就变成可选了,二选一，accessKey为空时就不需要传递认证，
+1. 顺便apps/bilibili_live_danmu_proxy/bin/bilibili_live_danmu_proxy.dart也添加支持配置后端地址，有这个时accessKey可空，没有这个时accessKey必须有值，
+
+1. packages/bilibili_live_api/lib/src/bilibili_live_api_client.dart:43 一大堆empty判断太丑了， 没必要，null判断就够了， 而且你都已经封装getter了当然优先用封装好的isProxyMode，
+1. 继续
+
+1. apps/bilibili_live_danmu/lib/live_page.dart:106 code不能乱取， 也得从前一页传入，
+1. 首页太挤了， 后端设置和http服务开关放到设置页去， 不过判断如果是web版就显示后端设置，不显示accessKey设置，
+1. 添加设置页， 从首页右上角添加齿轮按钮进入，
+1. 设置页基本就显示apps/bilibili_live_danmu/lib/widgets/settings_panel.dart， 加个可选参数代表不是工作中，
+1. 非工作中才显示新加的http服务开关和后端地址输入框，另外加上服务端口设置，默认你安排一个大于10000的端口号，
+
+1. apps/bilibili_live_danmu/lib/home_page.dart:229 你把这个禁用了干嘛， 让你显示后端设置就是要直接编辑使用的，
+1. 考虑同步，进入设置页之前也得保存当前输入，
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart:23 非工作状态下这些回调不是必填的， 调整判断，调整设置页不传不需要的回调，
+1. apps/bilibili_live_danmu/lib/settings_page.dart:83 别独立出服务设置， 全部放进panel中一视同仁， 只是区分显示不显示而已，
+
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart:45 干嘛非要搞不同， 新加的服务设置板块就给我好好参考原有的设置，添加一个板块不就好了，我说了唯一特殊在于工作状态隐藏ui，其他都可以正常处理，
+
+1. 我™说的不是ui啊， 是settingsManager，你给我看好了其他设置是怎么实现的再重写服务设置， 
