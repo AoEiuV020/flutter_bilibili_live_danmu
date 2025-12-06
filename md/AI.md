@@ -66,3 +66,5 @@
 
 1. apps/bilibili_live_danmu/lib/home_page.dart:166 可空字段使用需要判断， 这还要我教你吗？
 1. 而且client.start里这些字段code/appId早该改成可空的了，
+
+1. packages/bilibili_live_api_server/lib/src/bilibili_live_api_server.dart:260 添加针对 packages/bilibili_live_api/lib/src/models/response_parser.dart:2 的处理，

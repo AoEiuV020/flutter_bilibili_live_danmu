@@ -257,6 +257,12 @@ class BilibiliLiveApiServer {
 
   /// 构造错误响应
   Response _errorResponse(Object error) {
+    if (error is BilibiliApiException) {
+      return Response.internalServerError(
+        body: jsonEncode({'code': error.code, 'message': error.message}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    }
     return Response.internalServerError(
       body: jsonEncode({'code': -1, 'message': error.toString()}),
       headers: {'Content-Type': 'application/json'},
