@@ -20,6 +20,9 @@ void setupSignalHandlers(BilibiliLiveApiServer server) {
       logger.i('服务器已优雅关闭');
     } catch (e, stackTrace) {
       logger.e('关闭服务器时出错: $e', error: e, stackTrace: stackTrace);
+    } finally {
+      // 退出程序
+      exit(0);
     }
   }
 

@@ -43,7 +43,7 @@ Future<void> runServer(List<String> arguments) async {
   final server = BilibiliLiveApiServer(config: config);
 
   // 注册信号处理器，优雅关闭
-  // setupSignalHandlers(server);
+  setupSignalHandlers(server);
 
   // 启动服务器
   try {
