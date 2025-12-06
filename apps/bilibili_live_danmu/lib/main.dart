@@ -16,6 +16,7 @@ void main(List<String> args) async {
     printEmojis: true,
     dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
   );
+  Logger.level = Level.debug;
 
   // 解析命令行参数并保存为全局实例
   final options = await parseAppOptions(args);

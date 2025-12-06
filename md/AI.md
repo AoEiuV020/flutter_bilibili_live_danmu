@@ -112,3 +112,29 @@ Logger参数的printer全都不传，
 1. 继续
 
 1. 你™别偷懒啊， 运行确认一下改好了吗那就结束？
+
+
+1. apps/bilibili_live_danmu_proxy/bin/bilibili_live_danmu_proxy.dart 挤太多代码了， 功能实现全部放到lib目录下， 只留main函数在这里，
+1. 注意import该相对路径，
+1. 运行main测试，
+
+1. 还是太挤了， 多拆几个文件， 
+
+1. import src不离谱吗， 做好导出啊，
+
+1. 你™导出一大堆是要干嘛， 实际需要的不就apps/bilibili_live_danmu_proxy/bin/bilibili_live_danmu_proxy.dart:1 这里一个， 
+
+1. 我让你拆代码， 你偷偷改了啥啊， 现在一启动就自动退出了， 
+1. 入口肯定要单独一个文件初始化defaultPrinter，否则报错都看不到， 
+1. 使用apps/bilibili_live_danmu/assets/config.properties配置运行测试， 
+
+1. 禁用exit，好好退出， 
+1. apps/bilibili_live_danmu_proxy/lib/bilibili_live_danmu_proxy.dart:1 不要乱搞了，这里就只放一个main，在这里初始化defaultPrinter，捕获打印所有异常，
+1. 所有模块的lib/src/logger.dart中的logger初始化改用late, 不要搞initializeLoggerInstance，
+
+1. 你™怎么就听不懂， main函数逻辑全部放在 apps/bilibili_live_danmu_proxy/lib/bilibili_live_danmu_proxy.dart ， 而apps/bilibili_live_danmu_proxy/bin/bilibili_live_danmu_proxy.dart只复制调用main,
+1. 不要apps/bilibili_live_danmu_proxy/lib/src/initializer.dart
+1. 你的sleep 3 && pkill 无效，没有正确关闭，
+1. 继续，
+
+AI死活改不好，
