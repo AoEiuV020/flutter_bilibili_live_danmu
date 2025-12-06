@@ -14,10 +14,10 @@ class BilibiliApiException implements Exception {
 /// 如果 code == 0 则返回 data
 T parseResponse<T>(Map<String, dynamic> json, T Function(dynamic)? dataParser) {
   final code = json['code'] as int;
-  final message = json['message'] as String;
 
   // 如果返回码不为 0，抛出异常
   if (code != 0) {
+    final message = json['message'] as String;
     throw BilibiliApiException(code, message);
   }
 
