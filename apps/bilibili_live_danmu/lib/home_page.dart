@@ -176,7 +176,6 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     } catch (e) {
-      debugPrint('启动失败: $e');
       log('启动失败', error: e, stackTrace: e is Error ? e.stackTrace : null);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
