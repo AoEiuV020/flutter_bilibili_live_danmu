@@ -28,7 +28,8 @@ void setupSignalHandlers(BilibiliLiveApiServer server) {
       logger.e('关闭服务器时出错: $e', error: e, stackTrace: stackTrace);
     } finally {
       // 退出程序
-      exit(0);
+      // 正常退出了所有监听的话不需要调用 exit
+      // exit(0);
     }
   }
 
