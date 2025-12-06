@@ -424,45 +424,39 @@ class _SettingsPanelState extends State<SettingsPanel> {
         ),
         const SizedBox(height: 16),
         // HTTP 服务开关（非 Web 端）
-        if (!kIsWeb) ...[
-          _buildSwitchSetting(
-            '启用 HTTP 代理服务',
-            _serverSettings.enableHttpServer,
-            (value) {
-              final port =
-                  int.tryParse(_httpServerPortController.text) ?? 18080;
-              _updateServerSettings(
-                ServerSettings(
-                  backendUrl: _backendUrlController.text,
-                  enableHttpServer: value,
-                  httpServerPort: port,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          // 服务端口
-          TextField(
-            controller: _httpServerPortController,
-            decoration: const InputDecoration(
-              labelText: 'HTTP 服务端口',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.numbers),
+        _buildSwitchSetting('启用 HTTP 代理服务', _serverSettings.enableHttpServer, (
+          value,
+        ) {
+          final port = int.tryParse(_httpServerPortController.text) ?? 18080;
+          _updateServerSettings(
+            ServerSettings(
+              backendUrl: _backendUrlController.text,
+              enableHttpServer: value,
+              httpServerPort: port,
             ),
-            keyboardType: TextInputType.number,
-            onChanged: (_) {
-              final port =
-                  int.tryParse(_httpServerPortController.text) ?? 18080;
-              _updateServerSettings(
-                ServerSettings(
-                  backendUrl: _backendUrlController.text,
-                  enableHttpServer: _serverSettings.enableHttpServer,
-                  httpServerPort: port,
-                ),
-              );
-            },
+          );
+        }),
+        const SizedBox(height: 16),
+        // 服务端口
+        TextField(
+          controller: _httpServerPortController,
+          decoration: const InputDecoration(
+            labelText: 'HTTP 服务端口',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.numbers),
           ),
-        ],
+          keyboardType: TextInputType.number,
+          onChanged: (_) {
+            final port = int.tryParse(_httpServerPortController.text) ?? 18080;
+            _updateServerSettings(
+              ServerSettings(
+                backendUrl: _backendUrlController.text,
+                enableHttpServer: _serverSettings.enableHttpServer,
+                httpServerPort: port,
+              ),
+            );
+          },
+        ),
       ],
     );
   }
