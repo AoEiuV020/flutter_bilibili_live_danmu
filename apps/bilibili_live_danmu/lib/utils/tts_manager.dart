@@ -51,7 +51,7 @@ class TtsManager {
       // 添加超时保护，防止初始化卡死
       await Future.wait([
         // await _flutterTts!.setLanguage('zh-CN'),
-        _flutterTts!.setSpeechRate(0.5), // 语速
+        _flutterTts!.setSpeechRate(1.0), // 语速
         _flutterTts!.setVolume(1.0), // 音量
         _flutterTts!.setPitch(1.0), // 音调
       ]).timeout(
