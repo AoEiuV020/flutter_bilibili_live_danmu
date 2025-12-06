@@ -1,5 +1,5 @@
 /// Bilibili Live Danmu Proxy 库
-library bilibili_live_danmu_proxy;
+library;
 
 import 'dart:async';
 
@@ -10,14 +10,8 @@ import 'src/logger.dart';
 /// 主函数
 Future<void> main(List<String> arguments) async {
   // 第一时间设置logger的默认printer（所有日志使用统一格式）
-  Logger.defaultPrinter = () => PrettyPrinter(
-    methodCount: 2,
-    errorMethodCount: 8,
-    lineLength: 120,
-    colors: true,
-    printEmojis: true,
-    dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-  );
+  Logger.defaultPrinter = () => SimplePrinter();
+  Logger.defaultFilter = () => ProductionFilter();
   Logger.level = Level.debug;
 
   try {

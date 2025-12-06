@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:logger/logger.dart';
+import 'package:args/args.dart';
 import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
 import 'arg_parser.dart';
 import 'config_manager.dart';
@@ -11,7 +11,7 @@ import 'logger.dart';
 Future<void> runServer(List<String> arguments) async {
   final parser = createArgParser();
 
-  var args;
+  ArgResults args;
   try {
     args = parser.parse(arguments);
   } catch (e, stackTrace) {
@@ -43,7 +43,7 @@ Future<void> runServer(List<String> arguments) async {
   final server = BilibiliLiveApiServer(config: config);
 
   // 注册信号处理器，优雅关闭
-  setupSignalHandlers(server);
+  // setupSignalHandlers(server);
 
   // 启动服务器
   try {

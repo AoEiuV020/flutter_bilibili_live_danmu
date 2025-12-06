@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:logger/logger.dart';
 import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
 import 'logger.dart';
 

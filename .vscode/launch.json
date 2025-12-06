@@ -23,6 +23,15 @@
                 "--web-hostname=127.0.0.1",
                 "--web-launch-url=http://127.0.0.1:9080/?backend-url=http://127.0.0.1:8080&auto-start",
             ]
+        },
+        {
+            "name": "bilibili_live_danmu_proxy(args)",
+            "cwd": "apps/bilibili_live_danmu_proxy",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--config=../bilibili_live_danmu/assets/config.properties",
+            ]
         }
     ]
 }
