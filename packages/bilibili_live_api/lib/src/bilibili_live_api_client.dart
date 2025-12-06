@@ -202,7 +202,7 @@ class BilibiliLiveApiClient {
         return Exception('请求超时: ${error.message}');
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
-        final message = error.response?.data?['message'] ?? error.message;
+        final message = error.response?.statusMessage;
         return Exception('请求失败 [$statusCode]: $message');
       case DioExceptionType.cancel:
         return Exception('请求已取消');
