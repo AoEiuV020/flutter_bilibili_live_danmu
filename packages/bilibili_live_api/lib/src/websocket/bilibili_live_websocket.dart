@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import '../utils/logger.dart';
+import '../logger.dart';
 import 'websocket_client.dart';
 import 'messages/messages.dart';
 
@@ -36,8 +36,8 @@ class BilibiliLiveWebSocket {
       _reconnectAttempts = 0;
 
       await _connectInternal();
-    } catch (e) {
-      Logger.error('[LiveWebSocket] 连接失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('[LiveWebSocket] 连接失败: $e', error: e, stackTrace: stackTrace);
       onError?.call('连接失败: $e');
       _scheduleReconnect();
     }
@@ -105,14 +105,18 @@ class BilibiliLiveWebSocket {
   void _handleMessage(LiveMessage message) {
     try {
       onMessage?.call(message);
-    } catch (e) {
-      Logger.error('[LiveWebSocket] 处理消息回调失败: $e');
+    } catch (e, stackTrace) {
+      logger.e(
+        '[LiveWebSocket] 处理消息回调失败: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
   /// 处理错误
   void _handleError(String error) {
-    Logger.error('[LiveWebSocket] WebSocket 错误: $error');
+    logger.e('[LiveWebSocket] WebSocket 错误: $error');
     onError?.call(error);
 
     // 错误时尝试重连
@@ -123,7 +127,7 @@ class BilibiliLiveWebSocket {
 
   /// 处理状态变化
   void _handleStateChange(WebSocketState state) {
-    Logger.info('[LiveWebSocket] 状态变化: $state');
+    logger.i('[LiveWebSocket] 状态变化: $state');
 
     switch (state) {
       case WebSocketState.authenticated:
@@ -149,22 +153,26 @@ class BilibiliLiveWebSocket {
 
     // 检查重连次数
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      Logger.warning('[LiveWebSocket] 达到最大重连次数，停止重连');
+      logger.w('[LiveWebSocket] 达到最大重连次数，停止重连');
       onError?.call('连接失败次数过多，已停止重连');
       _shouldReconnect = false;
       return;
     }
 
     _reconnectAttempts++;
-    Logger.info(
+    logger.i(
       '[LiveWebSocket] 将在 ${_reconnectDelay.inSeconds} 秒后重连 (第 $_reconnectAttempts 次)',
     );
 
     _reconnectTimer = Timer(_reconnectDelay, () {
       if (_shouldReconnect) {
-        Logger.info('[LiveWebSocket] 开始重连...');
-        _connectInternal().catchError((e) {
-          Logger.error('[LiveWebSocket] 重连失败: $e');
+        logger.i('[LiveWebSocket] 开始重连...');
+        _connectInternal().catchError((e, stackTrace) {
+          logger.e(
+            '[LiveWebSocket] 重连失败: $e',
+            error: e,
+            stackTrace: stackTrace,
+          );
         });
       }
     });

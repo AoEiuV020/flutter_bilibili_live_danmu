@@ -8,6 +8,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
 import 'server_config.dart';
+import '../src/logger.dart';
 
 /// Bilibili Live API HTTP 代理服务器
 ///
@@ -60,7 +61,7 @@ class BilibiliLiveApiServer {
 
     // 启动服务器
     _server = await shelf_io.serve(handler, address, port);
-    print('服务器已启动: http://${_server!.address.host}:${_server!.port}');
+    logger.i('服务器已启动: http://${_server!.address.host}:${_server!.port}');
   }
 
   /// 停止服务器
@@ -73,7 +74,7 @@ class BilibiliLiveApiServer {
     _server = null;
     _apiClient?.dispose();
     _apiClient = null;
-    print('服务器已停止');
+    logger.i('服务器已停止');
   }
 
   /// 创建路由

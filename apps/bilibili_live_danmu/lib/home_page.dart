@@ -9,6 +9,7 @@ import 'live_page.dart';
 import 'options/app_options.dart';
 import 'settings_page.dart';
 import 'utils/tts_manager.dart';
+import 'src/logger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -49,8 +50,8 @@ class _HomePageState extends State<HomePage> {
       await Future.wait([_loadConfig(), _initializeTts()]);
       // 所有初始化完成后，检查是否需要自动开始
       _checkAutoStart();
-    } catch (e) {
-      debugPrint('初始化异常: $e');
+    } catch (e, stackTrace) {
+      logger.e('初始化异常: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -60,11 +61,11 @@ class _HomePageState extends State<HomePage> {
       await TtsManager.instance.initialize().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          debugPrint('TTS 初始化超时（10秒）');
+          logger.w('TTS 初始化超时（10秒）');
         },
       );
-    } catch (e) {
-      debugPrint('TTS 初始化失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('TTS 初始化失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -98,7 +99,7 @@ class _HomePageState extends State<HomePage> {
         }
       } catch (e) {
         // assets 配置文件可能不存在，不影响继续执行
-        debugPrint('assets 配置文件读取失败: $e');
+        logger.w('assets 配置文件读取失败: $e');
       }
 
       // 加载 SettingsManager

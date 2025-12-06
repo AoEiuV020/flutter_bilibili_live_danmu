@@ -10,6 +10,7 @@ import 'utils/message_dispatcher.dart';
 import 'utils/log_consumer.dart';
 import 'utils/ui_consumer.dart';
 import 'utils/tts_consumer.dart';
+import 'src/logger.dart';
 import 'viewmodels/live_page_viewmodel.dart';
 
 class LivePage extends StatefulWidget {
@@ -112,9 +113,9 @@ class _LivePageState extends State<LivePage> {
       );
       _httpServer = BilibiliLiveApiServer(config: config);
       await _httpServer!.start(port: widget.httpServerPort, address: '0.0.0.0');
-      debugPrint('HTTP 代理服务器已启动，端口: ${_httpServer!.port}');
-    } catch (e) {
-      debugPrint('HTTP 代理服务器启动失败: $e');
+      logger.i('HTTP 代理服务器已启动，端口: ${_httpServer!.port}');
+    } catch (e, stackTrace) {
+      logger.e('HTTP 代理服务器启动失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -123,7 +124,7 @@ class _LivePageState extends State<LivePage> {
     if (_httpServer != null) {
       await _httpServer!.stop();
       _httpServer = null;
-      debugPrint('HTTP 代理服务器已停止');
+      logger.d('HTTP 代理服务器已停止');
     }
   }
 

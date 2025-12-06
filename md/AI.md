@@ -83,3 +83,32 @@
 1. apps/bilibili_live_danmu/lib/home_page.dart:127这个处理不太好， 检查自动连接应该仅启动时，改到 initState 等其他完成后再执行，
 
 1. _initializeTts 改成异步， 实际上initialize本来就是异步的， 然后一起等待都完成了才检查自动连接，
+
+1. 参考packages/bilibili_live_api/lib/src/interceptors/logger_interceptor.dart:6， 所有模块依赖logger,并添加模块内部使用的唯一logger示例， 单独文件存放，
+1. 每个logger仅自己模块可见，找到项目内其他所有日志打印， 统一使用这个logger打印，重点搜索print和debugPrint，另外packages/bilibili_live_api/lib/src/utils/logger.dart也处理掉，
+1. 两个库模块不要设置printer， 由两个app模块设置统一的defaultPrinter，
+
+
+1. 继续，
+1. 我™是不是说过了， 两个库模块不要设置printer，你为什么非要搞一个？
+1. 文件路径怎么不统一一下， 全部放在lib/logger.dart,
+1. 改完后对两个app模块build确保正确，
+
+
+1.  两个库模块啊两个， packages/bilibili_live_api_server/lib/src/logger.dart:6 这个也不要printer,
+
+1. 所有logger.e用的太草率了，如果有error和stacktrace就传入，全部检查一遍，
+1. 日志分级啊，别一大堆的.d.i, 该error的用error， 所有catch捕获的错误都用error级别打印， 其他情况按实际情况使用debug/info/warning级别，
+
+1. 我说了两个app模块设置统一的defaultPrinter你到底听没听？defaultPrinter在哪里，
+1. defaultPrinter要第一时间处理，否则可能打印时还没初始化，
+1. 四个logger文件调整统一lib/src/logger.dart, 全部统一，不要漏了，
+
+1. 你™到底知道不知道defaultPrinter是什么东西，我让你设置defaultPrinter你在干嘛，
+```
+static LogPrinter Function() defaultPrinter = () => PrettyPrinter();
+```
+Logger参数的printer全都不传，
+1. 继续
+
+1. 你™别偷懒啊， 运行确认一下改好了吗那就结束？

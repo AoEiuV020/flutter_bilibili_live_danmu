@@ -4,6 +4,7 @@ import 'package:args/args.dart';
 
 import 'app_options.dart';
 import 'parse_util.dart' if (dart.library.html) 'parse_util_web.dart';
+import '../src/logger.dart';
 
 /// 从配置文件读取参数
 ///
@@ -23,7 +24,7 @@ Future<Map<String, String?>> _loadConfigFile(String? configPath) async {
   try {
     final file = File(configPath);
     if (!await file.exists()) {
-      print('警告: 配置文件不存在: $configPath');
+      logger.w('警告: 配置文件不存在: $configPath');
       return {};
     }
 
@@ -43,8 +44,8 @@ Future<Map<String, String?>> _loadConfigFile(String? configPath) async {
     }
 
     return config;
-  } catch (e) {
-    print('警告: 读取配置文件失败: $e');
+  } catch (e, stackTrace) {
+    logger.e('警告: 读取配置文件失败: $e', error: e, stackTrace: stackTrace);
     return {};
   }
 }
@@ -75,7 +76,7 @@ Future<AppOptions> parseAppOptions(List<String> args) async {
     args = await prepareArgs(args);
     parseResult = parser.parse(args);
   } catch (error, stackTrace) {
-    print('Could not parse args: $error\n$stackTrace');
+    logger.e('Could not parse args: $error\n$stackTrace');
     parseResult = parser.parse([]);
   }
 

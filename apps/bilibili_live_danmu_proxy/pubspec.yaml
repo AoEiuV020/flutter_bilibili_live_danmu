@@ -12,6 +12,7 @@ dependencies:
   bilibili_live_api_server:
     path: ../../packages/bilibili_live_api_server
   args: ^2.6.0
+  logger: ^2.5.0
 
 dev_dependencies:
   lints: ^6.0.0

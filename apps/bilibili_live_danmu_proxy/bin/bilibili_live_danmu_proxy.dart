@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:logger/logger.dart';
 import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
 import 'package:bilibili_live_danmu_proxy/bilibili_live_danmu_proxy.dart';
+import 'package:bilibili_live_danmu_proxy/src/logger.dart';
 
 /// 默认配置文件路径
 const String _defaultConfigPath = 'config.properties';
@@ -15,6 +17,16 @@ const int _defaultPort = 8080;
 const String _defaultAddress = '0.0.0.0';
 
 void main(List<String> arguments) async {
+  // 第一时间设置logger的默认printer（所有日志使用统一格式）
+  Logger.defaultPrinter = () => PrettyPrinter(
+    methodCount: 2,
+    errorMethodCount: 8,
+    lineLength: 120,
+    colors: true,
+    printEmojis: true,
+    dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+  );
+
   final parser = ArgParser()
     ..addOption(
       'config',
@@ -43,8 +55,8 @@ void main(List<String> arguments) async {
   ArgResults args;
   try {
     args = parser.parse(arguments);
-  } catch (e) {
-    print('参数解析错误: $e');
+  } catch (e, stackTrace) {
+    logger.e('参数解析错误: $e', error: e, stackTrace: stackTrace);
     print('');
     _printUsage(parser);
     exit(1);
@@ -59,8 +71,8 @@ void main(List<String> arguments) async {
   ServerConfig config;
   try {
     config = await _loadConfig(args);
-  } catch (e) {
-    print('配置加载失败: $e');
+  } catch (e, stackTrace) {
+    logger.e('配置加载失败: $e', error: e, stackTrace: stackTrace);
     exit(1);
   }
 
@@ -77,9 +89,9 @@ void main(List<String> arguments) async {
   // 启动服务器
   try {
     await server.start(port: port, address: address);
-    print('服务器运行中，按 Ctrl+C 停止...');
-  } catch (e) {
-    print('服务器启动失败: $e');
+    logger.i('服务器运行中，按 Ctrl+C 停止...');
+  } catch (e, stackTrace) {
+    logger.e('服务器启动失败: $e', error: e, stackTrace: stackTrace);
     exit(1);
   }
 }

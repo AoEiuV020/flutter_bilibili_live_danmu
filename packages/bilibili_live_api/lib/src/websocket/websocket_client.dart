@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../utils/logger.dart';
+import '../logger.dart';
 import 'websocket_protocol.dart';
 import 'messages/messages.dart';
 
@@ -61,7 +61,7 @@ class BilibiliWebSocketClient {
       // 发送认证
       await _sendAuth(authBody);
 
-      Logger.info('[WebSocket] 已连接并发送认证');
+      logger.i('[WebSocket] 已连接并发送认证');
     } catch (e) {
       _handleError('连接失败: $e');
     }
@@ -74,7 +74,7 @@ class BilibiliWebSocketClient {
     _channel = null;
     _isAuthenticated = false;
     _updateState(WebSocketState.disconnected);
-    Logger.info('[WebSocket] 已断开连接');
+    logger.i('[WebSocket] 已断开连接');
   }
 
   /// 发送认证
@@ -105,7 +105,7 @@ class BilibiliWebSocketClient {
     );
 
     _sendPacket(packet);
-    Logger.debug('[WebSocket] 发送心跳 seq: ${packet.sequenceId}');
+    logger.d('[WebSocket] 发送心跳 seq: ${packet.sequenceId}');
   }
 
   /// 发送数据包
@@ -138,8 +138,8 @@ class BilibiliWebSocketClient {
           _handleMessageReply(packet);
           break;
       }
-    } catch (e) {
-      Logger.debug('[WebSocket] 处理消息失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('[WebSocket] 处理消息失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -154,7 +154,7 @@ class BilibiliWebSocketClient {
         _isAuthenticated = true;
         _updateState(WebSocketState.authenticated);
         _startHeartbeat();
-        Logger.info('[WebSocket] 认证成功');
+        logger.i('[WebSocket] 认证成功');
       } else {
         _handleError('认证失败: code=$code');
       }
@@ -168,7 +168,7 @@ class BilibiliWebSocketClient {
     // 心跳回复包含在线人数
     if (packet.body.length >= 4) {
       final online = packet.body.buffer.asByteData().getUint32(0);
-      Logger.debug('[WebSocket] 心跳回复, 在线人数: $online');
+      logger.d('[WebSocket] 心跳回复, 在线人数: $online');
     }
   }
 
@@ -184,31 +184,31 @@ class BilibiliWebSocketClient {
         final message = LiveMessage.fromJson(json);
 
         // 打印日志
-        Logger.debug('[WebSocket] 收到消息: $message');
+        logger.d('[WebSocket] 收到消息: $message');
 
         // 回调
         onMessage?.call(message);
       } else if (packet.version == ProtocolVersion.deflate ||
           packet.version == ProtocolVersion.brotli) {
         // TODO: 处理压缩消息
-        Logger.warning('[WebSocket] 收到压缩消息，暂不支持');
+        logger.w('[WebSocket] 收到压缩消息，暂不支持');
       }
-    } catch (e) {
-      Logger.error('[WebSocket] 处理消息失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('[WebSocket] 处理消息失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
   /// 处理错误
   void _handleError(dynamic error) {
     final errorMsg = error.toString();
-    Logger.error('[WebSocket] 错误: $errorMsg');
+    logger.e('[WebSocket] 错误: $errorMsg');
     _updateState(WebSocketState.error);
     onError?.call(errorMsg);
   }
 
   /// 处理连接关闭
   void _handleDone() {
-    Logger.info('[WebSocket] 连接已关闭');
+    logger.i('[WebSocket] 连接已关闭');
     _stopHeartbeat();
     _isAuthenticated = false;
     _updateState(WebSocketState.disconnected);

@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../src/logger.dart';
 
 /// TTS 管理器（单例）
 class TtsManager {
@@ -57,15 +57,15 @@ class TtsManager {
       ]).timeout(
         const Duration(seconds: 5),
         onTimeout: () {
-          debugPrint('TTS 初始化超时');
+          logger.w('TTS 初始化超时');
           throw TimeoutException('TTS 初始化超时', const Duration(seconds: 5));
         },
       );
 
       _isInitialized = true;
-      debugPrint('TTS 初始化成功');
-    } catch (e) {
-      debugPrint('TTS 初始化失败: $e');
+      logger.i('TTS 初始化成功');
+    } catch (e, stackTrace) {
+      logger.e('TTS 初始化失败: $e', error: e, stackTrace: stackTrace);
       // 初始化失败时，清理FlutterTts实例
       _flutterTts = null;
     } finally {
@@ -76,7 +76,7 @@ class TtsManager {
   /// 播报文本
   Future<void> speak(String text) async {
     if (!_isInitialized || _flutterTts == null) {
-      debugPrint('TTS 未初始化');
+      logger.w('TTS 未初始化');
       return;
     }
 
@@ -87,8 +87,8 @@ class TtsManager {
       }
 
       await _flutterTts!.speak(text);
-    } catch (e) {
-      debugPrint('TTS 播报失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('TTS 播报失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -98,8 +98,8 @@ class TtsManager {
 
     try {
       await _flutterTts!.stop();
-    } catch (e) {
-      debugPrint('TTS 停止失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('TTS 停止失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -114,8 +114,8 @@ class TtsManager {
 
     try {
       await _flutterTts!.setSpeechRate(rate);
-    } catch (e) {
-      debugPrint('设置语速失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('设置语速失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -125,8 +125,8 @@ class TtsManager {
 
     try {
       await _flutterTts!.setVolume(volume);
-    } catch (e) {
-      debugPrint('设置音量失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('设置音量失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -136,8 +136,8 @@ class TtsManager {
 
     try {
       await _flutterTts!.setPitch(pitch);
-    } catch (e) {
-      debugPrint('设置音调失败: $e');
+    } catch (e, stackTrace) {
+      logger.e('设置音调失败: $e', error: e, stackTrace: stackTrace);
     }
   }
 
