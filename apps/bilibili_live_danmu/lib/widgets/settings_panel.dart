@@ -6,17 +6,11 @@ import '../blocs/settings/server_settings_cubit.dart';
 
 /// 设置面板
 class SettingsPanel extends StatefulWidget {
-  final VoidCallback onClose;
-
   /// 是否处于工作中（直播中）
   /// 非工作模式下会显示服务器设置
   final bool isWorking;
 
-  const SettingsPanel({
-    super.key,
-    required this.onClose,
-    this.isWorking = true,
-  });
+  const SettingsPanel({super.key, this.isWorking = true});
 
   @override
   State<SettingsPanel> createState() => _SettingsPanelState();
@@ -61,45 +55,17 @@ class _SettingsPanelState extends State<SettingsPanel> {
           ),
         ],
       ),
-      child: Column(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          // 标题栏
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '设置',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: widget.onClose,
-                ),
-              ],
-            ),
-          ),
-
-          // 设置内容
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // 非工作模式下显示服务器设置
-                if (!widget.isWorking) ...[
-                  _buildServerSection(),
-                  const SizedBox(height: 24),
-                ],
-                _buildDisplaySection(),
-                const SizedBox(height: 24),
-                _buildFilterSection(),
-              ],
-            ),
-          ),
+          // 非工作模式下显示服务器设置
+          if (!widget.isWorking) ...[
+            _buildServerSection(),
+            const SizedBox(height: 24),
+          ],
+          _buildDisplaySection(),
+          const SizedBox(height: 24),
+          _buildFilterSection(),
         ],
       ),
     );

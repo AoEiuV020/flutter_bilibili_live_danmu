@@ -169,3 +169,4 @@ AI死活改不好，
 
 1. 之前卡住了，你检查一下bloc改造是否完成，完成剩余工作，
 
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart 这里不需要标题栏， 应该转移到live页面， 同时onClose也不需要了，setting page调整，

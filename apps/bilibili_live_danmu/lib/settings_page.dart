@@ -12,10 +12,7 @@ class SettingsPage extends StatelessWidget {
         title: const Text('设置'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: SettingsPanel(
-        onClose: () => Navigator.of(context).pop(),
-        isWorking: false,
-      ),
+      body: const SettingsPanel(isWorking: false),
     );
   }
 }
