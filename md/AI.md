@@ -143,3 +143,7 @@ AI死活改不好，
 
 1. 执行melos analyze， 修复所有问题，
 1. 一点一点处理，不要停下，
+
+
+1. 帮我完成packages/bilibili_live_api_server/README.md， 
+1. 参考packages/bilibili_live_api/README.md， 看看bilibili_live_api_server的实际功能写个简介，
