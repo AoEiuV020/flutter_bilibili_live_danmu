@@ -12,6 +12,7 @@ import 'options/app_options.dart';
 import 'settings_page.dart';
 import 'utils/tts_manager.dart';
 import 'src/logger.dart';
+import 'widgets/home_credentials_panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,6 +30,7 @@ class _HomePageState extends State<HomePage> {
   final _backendUrlController = TextEditingController();
 
   bool _isLoading = false;
+  bool _argsProcessed = false;
 
   /// 命令行参数
   AppOptions get _appOptions => AppOptions.instance;
@@ -42,11 +44,24 @@ class _HomePageState extends State<HomePage> {
     _initializeAsync();
   }
 
+  @override
+  void dispose() {
+    _appIdController.dispose();
+    _accessKeyIdController.dispose();
+    _accessKeySecretController.dispose();
+    _codeController.dispose();
+    _backendUrlController.dispose();
+    super.dispose();
+  }
+
   /// 异步初始化：加载配置和 TTS，完成后检查自动连接
   void _initializeAsync() async {
     try {
       await Future.wait([_loadConfig(), _initializeTts()]);
-      // 所有初始化完成后，检查是否需要自动开始
+      if (!mounted) return;
+      // 初始化完成后处理命令行参数
+      _processArgs();
+      // 参数处理完成后检查是否需要自动开始
       _checkAutoStart();
     } catch (e, stackTrace) {
       logger.e('初始化异常: $e', error: e, stackTrace: stackTrace);
@@ -67,17 +82,34 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  @override
-  void dispose() {
-    _appIdController.dispose();
-    _accessKeyIdController.dispose();
-    _accessKeySecretController.dispose();
-    _codeController.dispose();
-    _backendUrlController.dispose();
-    super.dispose();
+  /// 处理命令行参数（仅初始化时处理一次）
+  void _processArgs() {
+    if (_argsProcessed) return;
+
+    // 仅初始化时处理一次
+    if (_appOptions.appId != null) {
+      _appIdController.text = _appOptions.appId!;
+    }
+    if (_appOptions.accessKeyId != null) {
+      _accessKeyIdController.text = _appOptions.accessKeyId!;
+    }
+    if (_appOptions.accessKeySecret != null) {
+      _accessKeySecretController.text = _appOptions.accessKeySecret!;
+    }
+    if (_appOptions.code != null) {
+      _codeController.text = _appOptions.code!;
+    }
+    if (_appOptions.backendUrl != null) {
+      _backendUrlController.text = _appOptions.backendUrl!;
+    }
+
+    _argsProcessed = true;
   }
 
   /// 加载默认配置
+  ///
+  /// 优先级：已保存设置 > assets 配置
+  /// 命令行参数在 _processArgs 中单独处理
   Future<void> _loadConfig() async {
     try {
       // 从assets加载配置文件（优先级最低，作为兜底）
@@ -105,30 +137,22 @@ class _HomePageState extends State<HomePage> {
       final serverState = context.read<ServerSettingsCubit>().state;
 
       setState(() {
-        final credAppId = credState.appId;
-        final credAccessKeyId = credState.accessKeyId;
-        final credAccessKeySecret = credState.accessKeySecret;
-        final credCode = credState.code;
-        // 优先级：命令行参数 > --config 文件 > 已保存设置 > assets 配置
-        _appIdController.text =
-            _appOptions.appId ??
-            (credAppId.isNotEmpty ? credAppId : (assetsConfig['app_id'] ?? ''));
-        _accessKeyIdController.text =
-            _appOptions.accessKeyId ??
-            (credAccessKeyId.isNotEmpty
-                ? credAccessKeyId
-                : (assetsConfig['access_key_id'] ?? ''));
-        _accessKeySecretController.text =
-            _appOptions.accessKeySecret ??
-            (credAccessKeySecret.isNotEmpty
-                ? credAccessKeySecret
-                : (assetsConfig['access_key_secret'] ?? ''));
-        _codeController.text =
-            _appOptions.code ??
-            (credCode.isNotEmpty ? credCode : (assetsConfig['code'] ?? ''));
-        // 加载后端地址（优先使用命令行参数或已保存设置）
-        _backendUrlController.text =
-            _appOptions.backendUrl ?? serverState.backendUrl;
+        // 优先级：已保存设置 > assets 配置
+        // 命令行参数在 _processArgs 中处理，不在这里加载
+        _appIdController.text = credState.appId.isNotEmpty
+            ? credState.appId
+            : (assetsConfig['app_id'] ?? '');
+        _accessKeyIdController.text = credState.accessKeyId.isNotEmpty
+            ? credState.accessKeyId
+            : (assetsConfig['access_key_id'] ?? '');
+        _accessKeySecretController.text = credState.accessKeySecret.isNotEmpty
+            ? credState.accessKeySecret
+            : (assetsConfig['access_key_secret'] ?? '');
+        _codeController.text = credState.code.isNotEmpty
+            ? credState.code
+            : (assetsConfig['code'] ?? '');
+        // 加载后端地址（使用已保存设置）
+        _backendUrlController.text = serverState.backendUrl;
       });
     } catch (e) {
       if (mounted) {
@@ -140,8 +164,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// 检查是否自动开始直播
+  ///
+  /// 仅在初始化完成且参数处理完成后检查一次
   void _checkAutoStart() {
-    if (_appOptions.canAutoStart && mounted) {
+    if (_appOptions.canAutoStart && mounted && !_isLoading) {
       // 延迟执行，确保 UI 已经构建完成
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_isLoading) {
@@ -151,7 +177,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 保存配置
+  /// 保存配置到存储
+  ///
+  /// 每次输入变化时自动调用
   Future<void> _saveConfig() async {
     final credCubit = context.read<CredentialsSettingsCubit>();
     final serverCubit = context.read<ServerSettingsCubit>();
@@ -163,7 +191,14 @@ class _HomePageState extends State<HomePage> {
     await serverCubit.setBackendUrl(_backendUrlController.text);
   }
 
+  /// 处理输入变化，自动保存
+  void _handleInputChanged() {
+    _saveConfig();
+  }
+
   /// 开始直播
+  ///
+  /// 验证表单 -> 创建API客户端 -> 调用start接口 -> 跳转到直播页面
   Future<void> _startLive() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -174,9 +209,6 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // 保存配置
-      await _saveConfig();
-
       // 创建API客户端
       final BilibiliLiveApiClient client;
       if (_isProxyMode) {
@@ -192,7 +224,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      // 调用start接口，直接返回数据或抛出异常
+      // 调用start接口
       final startData = await client.start(
         code: _codeController.text.isEmpty ? null : _codeController.text,
         appId: _appIdController.text.isEmpty
@@ -214,8 +246,12 @@ class _HomePageState extends State<HomePage> {
             startData: startData,
             apiClient: client,
             enableHttpServer: serverState.enableHttpServer && !kIsWeb,
-            accessKeyId: _accessKeyIdController.text,
-            accessKeySecret: _accessKeySecretController.text,
+            accessKeyId: _accessKeyIdController.text.isEmpty
+                ? null
+                : _accessKeyIdController.text,
+            accessKeySecret: _accessKeySecretController.text.isEmpty
+                ? null
+                : _accessKeySecretController.text,
             code: _codeController.text.isEmpty ? null : _codeController.text,
             httpServerPort: serverState.httpServerPort,
           ),
@@ -239,13 +275,11 @@ class _HomePageState extends State<HomePage> {
 
   /// 打开设置页面
   Future<void> _openSettings() async {
-    // 进入设置页前先保存当前输入
-    await _saveConfig();
     if (!mounted) return;
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const SettingsPage()));
-    // 返回后重新加载配置
+    // 返回后重新加载配置（不处理参数，参数只初始化一次）
     await _loadConfig();
   }
 
@@ -275,108 +309,20 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const Icon(Icons.live_tv, size: 80, color: Colors.blue),
                   const SizedBox(height: 32),
-                  // Web 端显示后端地址输入框（必填）
-                  if (kIsWeb) ...[
-                    TextFormField(
-                      controller: _backendUrlController,
-                      decoration: const InputDecoration(
-                        labelText: '后端地址',
-                        hintText: '留空使用官方 API（Web 端需配置）',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.cloud),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    if (!_isProxyMode)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Web 端需要配置后端代理地址',
-                          style: TextStyle(color: Colors.orange),
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _appIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'App ID',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.apps),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      // 代理模式下可以为空
-                      if (_isProxyMode) return null;
-                      if (value == null || value.isEmpty) {
-                        return '请输入App ID';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return '请输入有效的数字';
-                      }
-                      return null;
-                    },
+
+                  // 凭证输入板块
+                  HomeCredentialsPanel(
+                    backendUrlController: _backendUrlController,
+                    appIdController: _appIdController,
+                    accessKeyIdController: _accessKeyIdController,
+                    accessKeySecretController: _accessKeySecretController,
+                    codeController: _codeController,
+                    onChanged: _handleInputChanged,
                   ),
-                  const SizedBox(height: 16),
-                  // 非 Web 端且非代理模式时显示 AccessKey 字段
-                  if (!kIsWeb) ...[
-                    TextFormField(
-                      controller: _accessKeyIdController,
-                      decoration: InputDecoration(
-                        labelText: 'Access Key ID',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.key),
-                        enabled: !_isProxyMode,
-                        helperText: _isProxyMode ? '使用后端代理模式' : null,
-                      ),
-                      validator: (value) {
-                        // 代理模式下不需要验证
-                        if (_isProxyMode) return null;
-                        if (value == null || value.isEmpty) {
-                          return '请输入Access Key ID';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _accessKeySecretController,
-                      decoration: InputDecoration(
-                        labelText: 'Access Key Secret',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.lock),
-                        enabled: !_isProxyMode,
-                        helperText: _isProxyMode ? '使用后端代理模式' : null,
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        // 代理模式下不需要验证
-                        if (_isProxyMode) return null;
-                        if (value == null || value.isEmpty) {
-                          return '请输入Access Key Secret';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _codeController,
-                    decoration: const InputDecoration(
-                      labelText: '身份码 (Code)',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.code),
-                    ),
-                    validator: (value) {
-                      // 代理模式下可以为空
-                      if (_isProxyMode) return null;
-                      if (value == null || value.isEmpty) {
-                        return '请输入身份码';
-                      }
-                      return null;
-                    },
-                  ),
+
                   const SizedBox(height: 24),
+
+                  // 开始按钮
                   ElevatedButton(
                     onPressed: _isLoading ? null : _startLive,
                     style: ElevatedButton.styleFrom(
