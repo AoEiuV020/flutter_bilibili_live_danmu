@@ -173,7 +173,12 @@ class _LivePageState extends State<LivePage> {
     final screenSize = MediaQuery.of(context).size;
 
     return PopScope(
-      canPop: true,
+      canPop: !_showSettings,
+      onPopInvokedWithResult: (didPop, result) {
+        setState(() {
+          _showSettings = false;
+        });
+      },
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(

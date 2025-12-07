@@ -287,3 +287,8 @@ apps/bilibili_live_danmu/lib/options/app_options.dart
 1. 不要一大堆的 backendUrl.trim().isNotEmpty ， 应该复用home cubit，
 
 1. assets/config.properties 不要了， 相关代码和说明都找出来删除，
+
+1. apps/bilibili_live_danmu/lib/live_page.dart 设置面板显示时，如果点击系统返回键， 应该关闭面板而不是退出页面，
+
+onPopInvoked过时，而且AI用法很怪，canPop直接写死了false,
+
