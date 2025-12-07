@@ -12,7 +12,6 @@ flutter_bilibili_live_danmu/
 │   └── bilibili_live_danmu/       # 主应用：弹幕显示界面
 ├── packages/                       # 公共包目录
 │   └── bilibili_live_api/         # B站直播开放平台 API 封装
-├── melos.yaml                      # Melos 配置文件
 └── pubspec.yaml                    # 工作空间配置
 ```
 
