@@ -16,8 +16,8 @@
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-entrypoint-args=launch-auto_start=true",
-                "--dart-entrypoint-args=server-backend_url=http://127.0.0.1:8080",
+                "--dart-entrypoint-args=--launch-auto_start=true",
+                "--dart-entrypoint-args=--server-backend_url=http://127.0.0.1:8080",
                 "--web-browser-flag=--disable-web-security",
                 "--web-port=9080",
                 "--web-hostname=127.0.0.1",
