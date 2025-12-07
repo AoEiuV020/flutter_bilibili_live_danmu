@@ -188,4 +188,34 @@ AI死活改不好，
 1. 还要有个docker compose.yaml文件， 能直接挂载当前目录下的config.properties文件运行，
 1. script目录添加脚本负责进入docker目录用docker compose构建和运行容器，
 
-1. docker compose简单一点， 不必要的都别写， 尤其env明明就是默认值，就别写上了， 
+1. 你写了就不管吗？script/docker_build.sh 脚本运行要编译通过， 
+1. 新脚本要参考旧脚本依赖env.sh处理项目目录，
+
+1. 这复制翻来覆去改不对， 干脆不要复制了， 看能不能换成挂载， 编译时把整个项目挂载进去， 后面的运行环境不需要，
+
+claude haiku 死活要来回瞎改，完全不知道在干嘛，
+
+换gemini，
+1. docker目录是其他AI写的，用不了， 你给我重新实现， 
+1. 希望是在编译阶段能把整个项目挂载进去编译， 运行阶段使用compose只挂载config文件，
+
+1. 你倒是给我运行验证好了啊， script/docker_build.sh
+1. build基础镜像要cirrusci/flutter:stable，前面的AI莫名给我换成dart了，
+
+不行， gemini总是非要用cat修改文件， 然后卡死，
+还非要把中文注释改成英文，
+
+1. 改docker/Dockerfile ， 
+1. 注释用中文， 
+1. 用户不能用root,
+
+1. build也禁止root， 
+1. 改完要运行script/docker_build.sh验证，
+
+1. 你™别瞎改我镜像， 换成ubuntu 20.04，自己安装必要的apt然后安装flutter，
+
+离谱，完全不行，非要瞎改我镜像，
+
+1. docker/Dockerfile:34 builduser直接改成app，名字是app，家目录是/app, 
+1. flutter安装换个位置，
+1. flutter clone之类的几个命令不要合并，

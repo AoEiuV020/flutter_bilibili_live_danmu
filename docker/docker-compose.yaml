@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   bilibili-live-danmu-proxy:
     build:
@@ -9,11 +7,5 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # 挂载当前目录的 config.properties 文件到容器中
-      - ./config.properties:/app/config/config.properties:ro
-    environment:
-      # 设置配置文件路径, 下面是默认值，
-      CONFIG_PATH: /app/config/config.properties
-      LISTEN_ADDRESS: 0.0.0.0
-      LISTEN_PORT: 8080
+      - ./config.properties:/app/config.properties
     restart: unless-stopped
