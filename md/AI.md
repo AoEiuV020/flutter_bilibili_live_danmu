@@ -281,3 +281,7 @@ apps/bilibili_live_danmu/lib/options/app_options.dart
 1. apps/bilibili_live_danmu/lib/options/parse.dart:87 一视同仁啊， autoStart不要特殊处理， 也一样的读取字符串，相关的都改掉，包括config.properties,
 
 1. apps/bilibili_live_danmu/lib/home_page.dart:249 这传一大堆的controller也太丑了， 压根没有必要从外部传入吧 ， 外面需要时直接从bloc读取就行了，
+
+1. apps/bilibili_live_danmu/lib/widgets/home_input_fields.dart:69 传入isProxyMode判断没意义， isProxyMode会变的， 应该直接把cubit传入才能判断的，其他地方类似， 都检查一下，
+
+1. 不要一大堆的 backendUrl.trim().isNotEmpty ， 应该复用home cubit，

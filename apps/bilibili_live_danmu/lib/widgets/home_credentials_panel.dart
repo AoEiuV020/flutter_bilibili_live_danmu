@@ -128,7 +128,6 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
         // App ID
         buildAppIdInput(
           controller: _appIdController,
-          isProxyMode: _backendUrlController.text.trim().isNotEmpty,
           onChanged: (value) => _handleInputChanged('appId', value),
         ),
         const SizedBox(height: 16),
@@ -137,13 +136,11 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
         if (!kIsWeb) ...[
           buildAccessKeyIdInput(
             controller: _accessKeyIdController,
-            isProxyMode: _backendUrlController.text.trim().isNotEmpty,
             onChanged: (value) => _handleInputChanged('accessKeyId', value),
           ),
           const SizedBox(height: 16),
           buildAccessKeySecretInput(
             controller: _accessKeySecretController,
-            isProxyMode: _backendUrlController.text.trim().isNotEmpty,
             onChanged: (value) => _handleInputChanged('accessKeySecret', value),
           ),
           const SizedBox(height: 16),
@@ -152,7 +149,6 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
         // Code
         buildCodeInput(
           controller: _codeController,
-          isProxyMode: _backendUrlController.text.trim().isNotEmpty,
           onChanged: (value) => _handleInputChanged('code', value),
         ),
       ],
