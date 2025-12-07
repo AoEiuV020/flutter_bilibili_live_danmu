@@ -285,3 +285,5 @@ apps/bilibili_live_danmu/lib/options/app_options.dart
 1. apps/bilibili_live_danmu/lib/widgets/home_input_fields.dart:69 传入isProxyMode判断没意义， isProxyMode会变的， 应该直接把cubit传入才能判断的，其他地方类似， 都检查一下，
 
 1. 不要一大堆的 backendUrl.trim().isNotEmpty ， 应该复用home cubit，
+
+1. assets/config.properties 不要了， 相关代码和说明都找出来删除，

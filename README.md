@@ -62,19 +62,7 @@ melos bootstrap
 flutter pub get
 ```
 
-### 2. 配置应用
-
-编辑 `apps/bilibili_live_danmu/assets/config.properties`：
-
-```properties
-app_id=你的_app_id
-access_key_id=你的_access_key_id
-access_key_secret=你的_access_key_secret
-code=你的_code
-```
-也可以在应用内进行配置。
-
-### 3. 运行应用
+### 2. 运行应用
 
 ```bash
 cd apps/bilibili_live_danmu

@@ -14,18 +14,7 @@
 
 ## 使用说明
 
-### 1. 配置默认值（可选）
-
-编辑 `assets/config.properties` 文件，设置默认配置：
-
-```properties
-app_id=your_app_id
-access_key_id=your_access_key_id
-access_key_secret=your_access_key_secret
-code=your_code
-```
-
-### 2. 启动应用
+### 1. 启动应用
 
 首页会显示四个输入框：
 - **App ID**: 项目 ID
@@ -35,7 +24,7 @@ code=your_code
 
 填写完毕后点击"开始直播"按钮。
 
-### 3. 直播页面
+### 2. 直播页面
 
 成功启动后会进入全屏黑色界面，显示：
 - 主播头像和昵称
@@ -59,8 +48,6 @@ lib/
 ├── main.dart          # 应用入口
 ├── home_page.dart     # 首页（配置页面）
 └── live_page.dart     # 直播页面
-assets/
-└── config.properties  # 配置文件
 ```
 
 ## 依赖

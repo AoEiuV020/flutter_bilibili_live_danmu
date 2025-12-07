@@ -14,25 +14,14 @@
 - **Access Key Secret**: 访问密钥
 - **Code**: 主播身份码
 
-## 3. 配置应用
-
-编辑 `apps/bilibili_live_danmu/assets/config.properties`：
-
-```properties
-app_id=你的_app_id
-access_key_id=你的_access_key_id
-access_key_secret=你的_access_key_secret
-code=你的_code
-```
-
-## 4. 安装依赖
+## 3. 安装依赖
 
 ```bash
 cd /Users/aoeiuv/git/flutter_bilibili_live_danmu
 flutter pub get
 ```
 
-## 5. 运行应用
+## 4. 运行应用
 
 ### 方式一：命令行运行
 
@@ -57,10 +46,10 @@ flutter run -d chrome
 flutter run -d macos
 ```
 
-## 6. 使用应用
+## 5. 使用应用
 
 1. **启动后**会显示配置页面
-2. **填写配置**（如果 config.properties 有默认值会自动填充）
+2. **填写配置**
    - App ID
    - Access Key ID
    - Access Key Secret
@@ -131,7 +120,6 @@ flutter_bilibili_live_danmu/
 │   │   ├── home_page.dart         # 首页
 │   │   └── live_page.dart         # 直播页
 │   └── assets/
-│       └── config.properties      # 配置文件
 │
 └── packages/bilibili_live_api/    # API 封装
     ├── lib/src/

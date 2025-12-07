@@ -13,8 +13,6 @@ flutter_bilibili_live_danmu/
 │       │   ├── home_page.dart      # 首页（配置页面）
 │       │   └── live_page.dart      # 直播页面
 │       └── assets/
-│           └── config.properties   # 配置文件
-│
 ├── packages/
 │   └── bilibili_live_api/          # B站直播 API 封装
 │       ├── lib/
