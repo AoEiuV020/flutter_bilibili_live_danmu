@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../blocs/settings/display_settings_cubit.dart';
 import '../blocs/settings/filter_settings_cubit.dart';
 import '../blocs/settings/server_settings_cubit.dart';
@@ -269,45 +270,29 @@ class _SettingsPanelState extends State<SettingsPanel> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('选择颜色'),
+        contentPadding: const EdgeInsets.all(16),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildColorOption('白色', Colors.white, onChanged),
-              _buildColorOption('黑色', Colors.black, onChanged),
-              _buildColorOption('红色', Colors.red, onChanged),
-              _buildColorOption('绿色', Colors.green, onChanged),
-              _buildColorOption('蓝色', Colors.blue, onChanged),
-              _buildColorOption('黄色', Colors.yellow, onChanged),
-              _buildColorOption('紫色', Colors.purple, onChanged),
-              _buildColorOption('橙色', Colors.orange, onChanged),
-            ],
+          child: ColorPicker(
+            pickerColor: currentColor,
+            onColorChanged: (color) {
+              onChanged(color);
+            },
+            pickerAreaHeightPercent: 0.8,
+            enableAlpha: true,
+            displayThumbColor: true,
+            portraitOnly: false,
+            hexInputController: TextEditingController(
+              text: currentColor.toHexString(),
+            ),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('确定'),
+          ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildColorOption(
-    String name,
-    Color color,
-    ValueChanged<Color> onChanged,
-  ) {
-    return ListTile(
-      leading: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: color,
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-      title: Text(name),
-      onTap: () {
-        onChanged(color);
-        Navigator.of(context).pop();
-      },
     );
   }
 
