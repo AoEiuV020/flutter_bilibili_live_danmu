@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_tts/flutter_tts.dart';
 import '../src/logger.dart';
+import './tts/tts_manager_empty.dart'
+    if (dart.library.html) './tts/tts_manager_web.dart';
 
 /// TTS 管理器（单例）
 class TtsManager {
@@ -83,7 +85,7 @@ class TtsManager {
     try {
       // 如果设置为打断旧的播报，先停止当前播报
       if (_interruptOldSpeech) {
-        await _flutterTts!.stop();
+        await ttsStop(_flutterTts!);
       }
 
       await _flutterTts!.speak(text);
