@@ -247,8 +247,35 @@ AI拆个代码能把握颜色选择器换了，而且编译不过，
 1. home page太大了， 想办法拆分一下业务和ui，尤其是参数处理拆分出来，考虑适合bloc的架构，或者vm，
 
 
+1. HomePageState应该没必要平铺所有字段吧，能否直接持有CredentialsSettingsState/ServerSettingsState，省的一个一个处理，
+1. 怎么没有完全同步呢， 设置页修改了字符串，home页没有变化，我想的是全部都是实时根据bloc状态同步的， home/settings都一样，
+
+
+1. 继续前面没处理完的，
 1. 参数处理也太乱了，也重构一下， 主要是apps/bilibili_live_danmu/lib/options/parse.dart
 apps/bilibili_live_danmu/lib/options/app_options.dart
 1. 首先apps/bilibili_live_danmu/lib/blocs/settings所有设置项的key改成公开的静态成员变量，方便参数解析这边复用，
-1. 所有key的分隔符统一用下划线_，不要用点号.，
-1. 所有Cubit添加传入Map<String, String?>的更新函数， 根据key更新对应设置项， 方便参数解析时调用，
+1. 所有key的分隔符调整，类型和内容之间用横线， 内容驼峰改成下划线分割单词，
+1. 所有Cubit构造函数添加Map<String, String?>，load时读取自己需要的每个字段，优先级是参数传入的>shared preferences保存的>默认值，
+1. 另外压根不需要这个单独的load函数， 直接放在构造函数里处理，
+1. parseAppOptions改成解析所有settings key，返回Map<String, String?>，用于各个Cubit构造函数使用，
+1. 参数config保留， 读取出来都加上CredentialsSettings的前缀，并且会被单独传入的参数覆盖，最终一样在Map中，
+1. home就不需要处理参数了， 在main直接传给各个Cubit，
+
+1. 让你在Cubit构造函数加默认值了， 原本的copyWith传空就是默认值了， 你干嘛把copyWith删了，
+1. 另外构造函数这里所有变量都只用一次， 压根没必要定义这个变量， 直接在使用的位置一行一个就是了，
+1. apps/bilibili_live_danmu/lib/options/parse.dart:33 不需要搞一堆的映射啊， 我说了直接加上前缀就一样了， 不要支持不一样的情况了，
+1. 继续，
+
+1. apps/bilibili_live_danmu/lib/options/parse.dart 不搞前缀了， 直接改参数key吧，现在要求参数key恰好和设置key一样才有效， 
+也就是代码这里不做任何处理， 单独定义一个数组，包含所有要支持从参数读取的key，其他代码直接遍历这个数组， 不做任何特殊处理， 包括help,
+1. cubit中一大堆的_parse太重复了， 封装一个工具类处理这些cubit中的重复代码， 
+
+1. apps/bilibili_live_danmu/lib/options/parse.dart:32 所有key列在这里太多了都不知道漏了没有， 改成每个cubit暴露一个key数组，这里整合自己需要的key数组就行了，
+1. autoStart也搞一个cubit，起个合适名字，并非settings，也不要强调autoStart和home，起个代表启动参数这种概念的名字添加一个cubit和其他一样处理不要搞特殊， 不要ParsedAppOptions，直接解析出Map就行，
+1. AppOptions 也就不需要了， home依赖新cubit读取autoStart，
+1. 目前的home page输入框会在每次输入后选中所有内容， 导致无法正确输入， 需要修复，参考设置页没这个问题， 
+
+1. 把所有真实key和默认值以config能读取的方式写在apps/bilibili_live_danmu/assets/config.properties，全部注释，
+
+1. apps/bilibili_live_danmu/lib/options/parse.dart:87 一视同仁啊， autoStart不要特殊处理， 也一样的读取字符串，相关的都改掉，包括config.properties,

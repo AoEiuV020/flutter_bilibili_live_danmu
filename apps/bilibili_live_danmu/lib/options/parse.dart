@@ -2,20 +2,33 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 
-import 'app_options.dart';
-import 'parse_util.dart' if (dart.library.html) 'parse_util_web.dart';
+import '../blocs/settings/credentials_settings_cubit.dart';
+import '../blocs/settings/display_settings_cubit.dart';
+import '../blocs/settings/filter_settings_cubit.dart';
+import '../blocs/settings/launch_settings_cubit.dart';
+import '../blocs/settings/server_settings_cubit.dart';
 import '../src/logger.dart';
+import 'parse_util.dart' if (dart.library.html) 'parse_util_web.dart';
+
+/// 所有支持从参数读取的 key（从各 Cubit 整合）
+///
+/// 参数的 key 必须恰好与这些值相同才有效
+List<String> get _allSupportedSettingKeys => [
+  ...CredentialsSettingsCubit.settingKeys,
+  ...ServerSettingsCubit.settingKeys,
+  ...DisplaySettingsCubit.settingKeys,
+  ...FilterSettingsCubit.settingKeys,
+  ...LaunchSettingsCubit.settingKeys,
+];
 
 /// 从配置文件读取参数
 ///
 /// 配置文件格式：
 /// ```
-/// app_id=value
-/// access_key_id=value
-/// access_key_secret=value
-/// code=value
-/// backend_url=value
+/// key=value
 /// ```
+///
+/// 只有在 [_supportedSettingKeys] 中的 key 才会被读取
 Future<Map<String, String?>> _loadConfigFile(String? configPath) async {
   if (configPath == null || configPath.isEmpty) {
     return {};
@@ -37,7 +50,8 @@ Future<Map<String, String?>> _loadConfigFile(String? configPath) async {
       if (parts.length == 2) {
         final key = parts[0].trim();
         final value = parts[1].trim();
-        if (value.isNotEmpty) {
+        // 只读取支持的 key
+        if (value.isNotEmpty && _allSupportedSettingKeys.contains(key)) {
           config[key] = value;
         }
       }
@@ -53,23 +67,24 @@ Future<Map<String, String?>> _loadConfigFile(String? configPath) async {
 /// 解析命令行参数
 ///
 /// 桌面端使用命令行参数，Web 端从 URL 查询参数解析
+///
+/// 返回参数 Map，key 为各个 Cubit 的静态 key
+///
 /// 优先级（从高到低）：
-/// 1. 命令行参数（--app-id 等）
+/// 1. 命令行参数
 /// 2. 配置文件参数（--config 指定的文件）
 ///
 /// 示例:
-/// - 桌面: app --app-id=123 --code=abc --access-key-id=xxx --access-key-secret=yyy --auto-start
+/// - 桌面: app --credentials-app_id=123 --credentials-code=abc --launch-auto_start=true
 /// - 桌面配置文件: app --config=/path/to/config.properties
-/// - Web: ?app-id=123&code=abc&backend-url=http://localhost:8080&auto-start
-Future<AppOptions> parseAppOptions(List<String> args) async {
-  final parser = ArgParser()
-    ..addOption('config', abbr: 'c', help: '配置文件路径')
-    ..addOption('app-id', help: '项目 ID')
-    ..addOption('access-key-id', help: 'Access Key ID')
-    ..addOption('access-key-secret', help: 'Access Key Secret')
-    ..addOption('code', help: '主播身份码')
-    ..addOption('backend-url', help: '后端代理地址')
-    ..addFlag('auto-start', help: '自动开始直播', defaultsTo: false);
+/// - Web: ?credentials-app_id=123&credentials-code=abc&launch-auto_start=true
+Future<Map<String, String?>> parseAppOptions(List<String> args) async {
+  final parser = ArgParser()..addOption('config', abbr: 'c', help: '配置文件路径');
+
+  // 动态添加所有支持的 key 为选项
+  for (final key in _allSupportedSettingKeys) {
+    parser.addOption(key);
+  }
 
   ArgResults parseResult;
   try {
@@ -82,25 +97,15 @@ Future<AppOptions> parseAppOptions(List<String> args) async {
 
   // 先从配置文件读取（优先级最低）
   final configFile = parseResult['config'] as String?;
-  final fileConfig = await _loadConfigFile(configFile);
+  final settings = await _loadConfigFile(configFile);
 
   // 命令行参数覆盖配置文件
-  final appId = parseResult['app-id'] as String? ?? fileConfig['app_id'];
-  final accessKeyId =
-      parseResult['access-key-id'] as String? ?? fileConfig['access_key_id'];
-  final accessKeySecret =
-      parseResult['access-key-secret'] as String? ??
-      fileConfig['access_key_secret'];
-  final code = parseResult['code'] as String? ?? fileConfig['code'];
-  final backendUrl =
-      parseResult['backend-url'] as String? ?? fileConfig['backend_url'];
+  for (final key in _allSupportedSettingKeys) {
+    final value = parseResult[key] as String?;
+    if (value != null && value.isNotEmpty) {
+      settings[key] = value;
+    }
+  }
 
-  return AppOptions(
-    appId: appId,
-    accessKeyId: accessKeyId,
-    accessKeySecret: accessKeySecret,
-    code: code,
-    backendUrl: backendUrl,
-    autoStart: parseResult.flag('auto-start'),
-  );
+  return settings;
 }

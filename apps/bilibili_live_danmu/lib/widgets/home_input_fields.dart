@@ -39,14 +39,14 @@ Widget buildHomeTextField({
 /// 代理模式的后端地址输入
 Widget buildBackendUrlInput({
   required TextEditingController controller,
-  required VoidCallback onChanged,
+  required ValueChanged<String> onChanged,
 }) {
   return buildHomeTextField(
     label: '后端地址',
     hintText: '留空使用官方 API',
     controller: controller,
     prefixIcon: Icons.cloud,
-    onChanged: (_) => onChanged(),
+    onChanged: onChanged,
     validator: (value) => null, // 可选字段
   );
 }
@@ -55,7 +55,7 @@ Widget buildBackendUrlInput({
 Widget buildAppIdInput({
   required TextEditingController controller,
   required bool isProxyMode,
-  required VoidCallback onChanged,
+  required ValueChanged<String> onChanged,
 }) {
   return buildHomeTextField(
     label: 'App ID',
@@ -63,7 +63,7 @@ Widget buildAppIdInput({
     controller: controller,
     keyboardType: TextInputType.number,
     prefixIcon: Icons.apps,
-    onChanged: (_) => onChanged(),
+    onChanged: onChanged,
     validator: (value) {
       // 代理模式下可以为空
       if (isProxyMode) return null;
@@ -82,7 +82,7 @@ Widget buildAppIdInput({
 Widget buildAccessKeyIdInput({
   required TextEditingController controller,
   required bool isProxyMode,
-  required VoidCallback onChanged,
+  required ValueChanged<String> onChanged,
 }) {
   return buildHomeTextField(
     label: 'Access Key ID',
@@ -91,7 +91,7 @@ Widget buildAccessKeyIdInput({
     prefixIcon: Icons.key,
     enabled: !isProxyMode,
     helperText: isProxyMode ? '使用后端代理模式' : null,
-    onChanged: (_) => onChanged(),
+    onChanged: onChanged,
     validator: (value) {
       // 代理模式下不需要验证
       if (isProxyMode) return null;
@@ -107,7 +107,7 @@ Widget buildAccessKeyIdInput({
 Widget buildAccessKeySecretInput({
   required TextEditingController controller,
   required bool isProxyMode,
-  required VoidCallback onChanged,
+  required ValueChanged<String> onChanged,
 }) {
   return buildHomeTextField(
     label: 'Access Key Secret',
@@ -117,7 +117,7 @@ Widget buildAccessKeySecretInput({
     obscureText: true,
     enabled: !isProxyMode,
     helperText: isProxyMode ? '使用后端代理模式' : null,
-    onChanged: (_) => onChanged(),
+    onChanged: onChanged,
     validator: (value) {
       // 代理模式下不需要验证
       if (isProxyMode) return null;
@@ -133,14 +133,14 @@ Widget buildAccessKeySecretInput({
 Widget buildCodeInput({
   required TextEditingController controller,
   required bool isProxyMode,
-  required VoidCallback onChanged,
+  required ValueChanged<String> onChanged,
 }) {
   return buildHomeTextField(
     label: '身份码 (Code)',
     hintText: '请输入身份码',
     controller: controller,
     prefixIcon: Icons.code,
-    onChanged: (_) => onChanged(),
+    onChanged: onChanged,
     validator: (value) {
       // 代理模式下可以为空
       if (isProxyMode) return null;

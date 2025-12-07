@@ -1,13 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'settings_parser.dart';
 
-// Keys (private to this file)
-const String _kAppId = 'credentials.appId';
-const String _kAccessKeyId = 'credentials.accessKeyId';
-const String _kAccessKeySecret = 'credentials.accessKeySecret';
-const String _kCode = 'credentials.code';
-
+/// 凭证设置状态
 class CredentialsSettingsState extends Equatable {
   final String appId;
   final String accessKeyId;
@@ -39,42 +35,82 @@ class CredentialsSettingsState extends Equatable {
   List<Object> get props => [appId, accessKeyId, accessKeySecret, code];
 }
 
+/// 凭证设置 Cubit
+///
+/// 管理 B 站 API 凭证相关设置
 class CredentialsSettingsCubit extends Cubit<CredentialsSettingsState> {
+  /// SharedPreferences key: App ID
+  static const String keyAppId = 'credentials-app_id';
+
+  /// SharedPreferences key: Access Key ID
+  static const String keyAccessKeyId = 'credentials-access_key_id';
+
+  /// SharedPreferences key: Access Key Secret
+  static const String keyAccessKeySecret = 'credentials-access_key_secret';
+
+  /// SharedPreferences key: 主播身份码
+  static const String keyCode = 'credentials-code';
+
+  /// 所有支持从参数读取的 setting keys
+  static const List<String> settingKeys = [
+    keyAppId,
+    keyAccessKeyId,
+    keyAccessKeySecret,
+    keyCode,
+  ];
+
   final SharedPreferences _prefs;
 
-  CredentialsSettingsCubit(this._prefs)
+  /// 创建凭证设置 Cubit
+  ///
+  /// [prefs] SharedPreferences 实例
+  /// [args] 命令行参数 Map，优先级高于 SharedPreferences
+  CredentialsSettingsCubit(this._prefs, {Map<String, String?> args = const {}})
     : super(const CredentialsSettingsState()) {
-    _load();
-  }
-
-  void _load() {
+    // 优先级: 参数传入 > SharedPreferences > 默认值(copyWith 传 null 时保持默认)
     emit(
       state.copyWith(
-        appId: _prefs.getString(_kAppId),
-        accessKeyId: _prefs.getString(_kAccessKeyId),
-        accessKeySecret: _prefs.getString(_kAccessKeySecret),
-        code: _prefs.getString(_kCode),
+        appId: SettingsParser.parseString(
+          args[keyAppId],
+          _prefs.getString(keyAppId),
+        ),
+        accessKeyId: SettingsParser.parseString(
+          args[keyAccessKeyId],
+          _prefs.getString(keyAccessKeyId),
+        ),
+        accessKeySecret: SettingsParser.parseString(
+          args[keyAccessKeySecret],
+          _prefs.getString(keyAccessKeySecret),
+        ),
+        code: SettingsParser.parseString(
+          args[keyCode],
+          _prefs.getString(keyCode),
+        ),
       ),
     );
   }
 
+  /// 设置 App ID
   Future<void> setAppId(String value) async {
-    await _prefs.setString(_kAppId, value);
+    await _prefs.setString(keyAppId, value);
     emit(state.copyWith(appId: value));
   }
 
+  /// 设置 Access Key ID
   Future<void> setAccessKeyId(String value) async {
-    await _prefs.setString(_kAccessKeyId, value);
+    await _prefs.setString(keyAccessKeyId, value);
     emit(state.copyWith(accessKeyId: value));
   }
 
+  /// 设置 Access Key Secret
   Future<void> setAccessKeySecret(String value) async {
-    await _prefs.setString(_kAccessKeySecret, value);
+    await _prefs.setString(keyAccessKeySecret, value);
     emit(state.copyWith(accessKeySecret: value));
   }
 
+  /// 设置主播身份码
   Future<void> setCode(String value) async {
-    await _prefs.setString(_kCode, value);
+    await _prefs.setString(keyCode, value);
     emit(state.copyWith(code: value));
   }
 }
