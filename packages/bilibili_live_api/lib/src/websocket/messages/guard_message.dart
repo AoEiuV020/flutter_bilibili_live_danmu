@@ -14,8 +14,6 @@ class GuardMessage extends LiveMessage {
   final int fansMedialLevel;
   final String? fansMedalName;
   final bool fansMedalWearingStatus;
-  @override
-  final String msgId;
   final int timestamp;
 
   GuardMessage({
@@ -31,7 +29,7 @@ class GuardMessage extends LiveMessage {
     required this.fansMedialLevel,
     this.fansMedalName,
     required this.fansMedalWearingStatus,
-    required this.msgId,
+    required String msgId,
     required this.timestamp,
   }) : super(cmd: 'LIVE_OPEN_PLATFORM_GUARD', msgId: msgId);
 

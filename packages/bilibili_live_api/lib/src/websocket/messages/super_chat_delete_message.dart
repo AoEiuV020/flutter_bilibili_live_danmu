@@ -4,13 +4,11 @@ import 'live_message.dart';
 class SuperChatDeleteMessage extends LiveMessage {
   final int roomId;
   final List<int> messageIds;
-  @override
-  final String msgId;
 
   SuperChatDeleteMessage({
     required this.roomId,
     required this.messageIds,
-    required this.msgId,
+    required String msgId,
   }) : super(cmd: 'LIVE_OPEN_PLATFORM_SUPER_CHAT_DEL', msgId: msgId);
 
   factory SuperChatDeleteMessage.fromJson(Map<String, dynamic> json) {

@@ -47,6 +47,7 @@ dependencies:
   flutter_tts: ^3.8.0
   args: ^2.4.2
   logger: ^2.5.0
+  web: ^1.0.0
 
 dev_dependencies:
   flutter_test:

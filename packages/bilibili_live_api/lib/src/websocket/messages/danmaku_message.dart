@@ -7,8 +7,6 @@ class DanmakuMessage extends LiveMessage {
   final String? unionId;
   final String uname;
   final String msg;
-  @override
-  final String msgId;
   final int timestamp;
   final String? uface;
   final int fansMedialLevel;
@@ -28,7 +26,7 @@ class DanmakuMessage extends LiveMessage {
     this.unionId,
     required this.uname,
     required this.msg,
-    required this.msgId,
+    required String msgId,
     required this.timestamp,
     this.uface,
     required this.fansMedialLevel,

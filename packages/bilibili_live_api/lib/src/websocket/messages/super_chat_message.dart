@@ -9,8 +9,6 @@ class SuperChatMessage extends LiveMessage {
   final String? uface;
   final int messageId;
   final String message;
-  @override
-  final String msgId;
   final int rmb;
   final int timestamp;
   final int startTime;
@@ -28,7 +26,7 @@ class SuperChatMessage extends LiveMessage {
     this.uface,
     required this.messageId,
     required this.message,
-    required this.msgId,
+    required String msgId,
     required this.rmb,
     required this.timestamp,
     required this.startTime,

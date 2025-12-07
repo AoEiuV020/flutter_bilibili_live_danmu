@@ -43,8 +43,8 @@ class DisplaySettings {
   Map<String, dynamic> toJson() {
     return {
       'fontSize': fontSize,
-      'textColor': textColor.value,
-      'backgroundColor': backgroundColor.value,
+      'textColor': textColor.toARGB32(),
+      'backgroundColor': backgroundColor.toARGB32(),
       'displayDuration': displayDuration,
     };
   }
@@ -52,9 +52,9 @@ class DisplaySettings {
   factory DisplaySettings.fromJson(Map<String, dynamic> json) {
     return DisplaySettings(
       fontSize: json['fontSize'] as double? ?? 20,
-      textColor: Color(json['textColor'] as int? ?? Colors.white.value),
+      textColor: Color(json['textColor'] as int? ?? Colors.white.toARGB32()),
       backgroundColor: Color(
-        json['backgroundColor'] as int? ?? Colors.black.value,
+        json['backgroundColor'] as int? ?? Colors.black.toARGB32(),
       ),
       displayDuration: json['displayDuration'] as int? ?? 120,
     );

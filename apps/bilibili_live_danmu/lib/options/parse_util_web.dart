@@ -1,4 +1,4 @@
-import 'dart:html';
+import 'package:web/web.dart';
 
 Future<List<String>> prepareArgs(List<String> args) async {
   String href = window.location.href;

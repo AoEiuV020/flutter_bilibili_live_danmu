@@ -140,3 +140,6 @@ Logger参数的printer全都不传，
 AI死活改不好，
 
 1. 调整packages/bilibili_live_api_server/pubspec.yaml， 参考 packages/bilibili_live_api/pubspec.yaml
+
+1. 执行melos analyze， 修复所有问题，
+1. 一点一点处理，不要停下，

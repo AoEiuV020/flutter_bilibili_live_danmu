@@ -17,8 +17,6 @@ class GiftMessage extends LiveMessage {
   final bool fansMedalWearingStatus;
   final int guardLevel;
   final int timestamp;
-  @override
-  final String msgId;
   final String? giftIcon;
 
   GiftMessage({
@@ -37,7 +35,7 @@ class GiftMessage extends LiveMessage {
     required this.fansMedalWearingStatus,
     required this.guardLevel,
     required this.timestamp,
-    required this.msgId,
+    required String msgId,
     this.giftIcon,
   }) : super(cmd: 'LIVE_OPEN_PLATFORM_SEND_GIFT', msgId: msgId);
 

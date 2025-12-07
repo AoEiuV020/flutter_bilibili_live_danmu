@@ -2,6 +2,7 @@ name: bilibili_live_danmu_proxy
 description: Bilibili Live API HTTP proxy server command-line application.
 version: 1.0.0
 repository: https://github.com/AoEiuV020/flutter_bilibili_live_danmu
+publish_to: none
 
 environment:
   sdk: ^3.10.3

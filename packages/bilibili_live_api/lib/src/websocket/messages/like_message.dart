@@ -13,8 +13,6 @@ class LikeMessage extends LiveMessage {
   final bool fansMedalWearingStatus;
   final String? fansMedalName;
   final int fansMedialLevel;
-  @override
-  final String msgId;
 
   LikeMessage({
     required this.roomId,
@@ -28,7 +26,7 @@ class LikeMessage extends LiveMessage {
     required this.fansMedalWearingStatus,
     this.fansMedalName,
     required this.fansMedialLevel,
-    required this.msgId,
+    required String msgId,
   }) : super(cmd: 'LIVE_OPEN_PLATFORM_LIKE', msgId: msgId);
 
   factory LikeMessage.fromJson(Map<String, dynamic> json) {
