@@ -48,6 +48,7 @@ Widget buildBackendUrlInput({
     hintText: '留空使用官方 API',
     controller: controller,
     prefixIcon: Icons.cloud,
+    helperText: 'Web CORS 必须配置后端代理地址',
     onChanged: onChanged,
     validator: (value) => null, // 可选字段
   );
@@ -64,7 +65,7 @@ Widget buildAppIdInput({
       final isProxyMode = homePageCubit.isProxyMode();
       return buildHomeTextField(
         label: 'App ID',
-        hintText: '请输入 App ID',
+        hintText: isProxyMode ? '默认使用后端的App ID' : '请输入 App ID',
         controller: controller,
         keyboardType: TextInputType.number,
         prefixIcon: Icons.apps,
@@ -100,7 +101,7 @@ Widget buildAccessKeyIdInput({
         controller: controller,
         prefixIcon: Icons.key,
         enabled: !isProxyMode,
-        helperText: isProxyMode ? '使用后端代理模式' : null,
+        helperText: isProxyMode ? '使用后端代理时无效' : null,
         onChanged: onChanged,
         validator: (value) {
           // 代理模式下不需要验证
@@ -131,7 +132,7 @@ Widget buildAccessKeySecretInput({
         prefixIcon: Icons.lock,
         obscureText: true,
         enabled: !isProxyMode,
-        helperText: isProxyMode ? '使用后端代理模式' : null,
+        helperText: isProxyMode ? '使用后端代理时无效' : null,
         onChanged: onChanged,
         validator: (value) {
           // 代理模式下不需要验证

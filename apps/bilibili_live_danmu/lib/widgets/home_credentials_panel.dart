@@ -114,14 +114,6 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
             controller: _backendUrlController,
             onChanged: (value) => _handleInputChanged('backendUrl', value),
           ),
-          if (_backendUrlController.text.trim().isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'Web 端需要配置后端代理地址',
-                style: TextStyle(color: Colors.orange),
-              ),
-            ),
           const SizedBox(height: 16),
         ],
 
