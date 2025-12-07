@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'blocs/home_page_cubit.dart';
-import 'blocs/settings/server_settings_cubit.dart';
 import 'live_page.dart';
 import 'settings_page.dart';
 import 'utils/tts_manager.dart';
@@ -21,11 +20,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _formKey = GlobalKey<FormState>();
-  final _appIdController = TextEditingController();
-  final _accessKeyIdController = TextEditingController();
-  final _accessKeySecretController = TextEditingController();
-  final _codeController = TextEditingController();
-  final _backendUrlController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -35,16 +29,13 @@ class _HomePageState extends State<HomePage> {
     _initializeAsync();
   }
 
-  /// 异步初始化：初始化 TTS 并同步控制器
+  /// 异步初始化：初始化 TTS
   void _initializeAsync() async {
     try {
       // 初始化 TTS
       await _initializeTts();
 
       if (!mounted) return;
-
-      // 同步 UI 控制器的值
-      _syncControllers();
 
       // 检查是否需要自动开始
       _checkAutoStart();
@@ -67,18 +58,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 从 Cubit 状态同步控制器的值
-  void _syncControllers() {
-    final homePageCubit = context.read<HomePageCubit>();
-    final state = homePageCubit.state;
-
-    _appIdController.text = state.credentialsState.appId;
-    _accessKeyIdController.text = state.credentialsState.accessKeyId;
-    _accessKeySecretController.text = state.credentialsState.accessKeySecret;
-    _codeController.text = state.credentialsState.code;
-    _backendUrlController.text = state.serverState.backendUrl;
-  }
-
   /// 检查是否自动开始直播
   void _checkAutoStart() {
     final homePageCubit = context.read<HomePageCubit>();
@@ -95,11 +74,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _appIdController.dispose();
-    _accessKeyIdController.dispose();
-    _accessKeySecretController.dispose();
-    _codeController.dispose();
-    _backendUrlController.dispose();
     super.dispose();
   }
 
@@ -122,50 +96,48 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
+      final homePageCubit = context.read<HomePageCubit>();
+      final credState = homePageCubit.state.credentialsState;
+      final serverState = homePageCubit.state.serverState;
+
       // 创建API客户端
       final BilibiliLiveApiClient client;
       if (_isProxyMode()) {
         // 使用后端代理模式
-        client = BilibiliLiveApiClient(
-          baseUrl: _backendUrlController.text.trim(),
-        );
+        client = BilibiliLiveApiClient(baseUrl: serverState.backendUrl.trim());
       } else {
         // 直连官方 API 模式
         client = BilibiliLiveApiClient(
-          accessKeyId: _accessKeyIdController.text,
-          accessKeySecret: _accessKeySecretController.text,
+          accessKeyId: credState.accessKeyId,
+          accessKeySecret: credState.accessKeySecret,
         );
       }
 
       // 调用start接口
       final startData = await client.start(
-        code: _codeController.text.isEmpty ? null : _codeController.text,
-        appId: _appIdController.text.isEmpty
-            ? null
-            : int.tryParse(_appIdController.text),
+        code: credState.code.isEmpty ? null : credState.code,
+        appId: credState.appId.isEmpty ? null : int.tryParse(credState.appId),
       );
 
       if (!mounted) return;
-
-      final serverState = context.read<ServerSettingsCubit>().state;
 
       // 成功后跳转到第二页
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => LivePage(
-            appId: _appIdController.text.isEmpty
+            appId: credState.appId.isEmpty
                 ? null
-                : int.tryParse(_appIdController.text),
+                : int.tryParse(credState.appId),
             startData: startData,
             apiClient: client,
             enableHttpServer: serverState.enableHttpServer && !kIsWeb,
-            accessKeyId: _accessKeyIdController.text.isEmpty
+            accessKeyId: credState.accessKeyId.isEmpty
                 ? null
-                : _accessKeyIdController.text,
-            accessKeySecret: _accessKeySecretController.text.isEmpty
+                : credState.accessKeyId,
+            accessKeySecret: credState.accessKeySecret.isEmpty
                 ? null
-                : _accessKeySecretController.text,
-            code: _codeController.text.isEmpty ? null : _codeController.text,
+                : credState.accessKeySecret,
+            code: credState.code.isEmpty ? null : credState.code,
             httpServerPort: serverState.httpServerPort,
           ),
         ),
@@ -192,92 +164,62 @@ class _HomePageState extends State<HomePage> {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const SettingsPage()));
-    // 返回后同步 UI（配置可能有变化）
-    _syncControllers();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<HomePageCubit, HomePageState>(
-      listener: (context, state) {
-        // 只在值实际不同时才更新，避免选中所有文本
-        if (_appIdController.text != state.credentialsState.appId) {
-          _appIdController.text = state.credentialsState.appId;
-        }
-        if (_accessKeyIdController.text != state.credentialsState.accessKeyId) {
-          _accessKeyIdController.text = state.credentialsState.accessKeyId;
-        }
-        if (_accessKeySecretController.text !=
-            state.credentialsState.accessKeySecret) {
-          _accessKeySecretController.text =
-              state.credentialsState.accessKeySecret;
-        }
-        if (_codeController.text != state.credentialsState.code) {
-          _codeController.text = state.credentialsState.code;
-        }
-        if (_backendUrlController.text != state.serverState.backendUrl) {
-          _backendUrlController.text = state.serverState.backendUrl;
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('哔哩哔哩直播弹幕'),
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: _openSettings,
-              tooltip: '设置',
-            ),
-          ],
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Icon(Icons.live_tv, size: 80, color: Colors.blue),
-                    const SizedBox(height: 32),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('哔哩哔哩直播弹幕'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _openSettings,
+            tooltip: '设置',
+          ),
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.live_tv, size: 80, color: Colors.blue),
+                  const SizedBox(height: 32),
 
-                    // 凭证输入板块
-                    HomeCredentialsPanel(
-                      backendUrlController: _backendUrlController,
-                      appIdController: _appIdController,
-                      accessKeyIdController: _accessKeyIdController,
-                      accessKeySecretController: _accessKeySecretController,
-                      codeController: _codeController,
+                  // 凭证输入板块
+                  const HomeCredentialsPanel(),
+
+                  const SizedBox(height: 24),
+
+                  // 开始按钮
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _startLive,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // 开始按钮
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _startLive,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
                               ),
-                            )
-                          : const Text('开始直播', style: TextStyle(fontSize: 18)),
-                    ),
-                  ],
-                ),
+                            ),
+                          )
+                        : const Text('开始直播', style: TextStyle(fontSize: 18)),
+                  ),
+                ],
               ),
             ),
           ),

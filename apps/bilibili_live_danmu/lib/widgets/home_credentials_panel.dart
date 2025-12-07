@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/home_page_cubit.dart';
 import '../blocs/settings/credentials_settings_cubit.dart';
 import '../blocs/settings/server_settings_cubit.dart';
 import 'home_input_fields.dart';
@@ -14,54 +15,66 @@ import 'home_input_fields.dart';
 /// - Access Key Secret（非Web端）
 /// - Code
 ///
-/// 直接与底层 Cubit 通信进行状态更新和自动保存
+/// 直接从 Cubit 读取状态，无需从外部传入 controller
 class HomeCredentialsPanel extends StatefulWidget {
-  /// 后端地址控制器
-  final TextEditingController backendUrlController;
-
-  /// App ID 控制器
-  final TextEditingController appIdController;
-
-  /// Access Key ID 控制器
-  final TextEditingController accessKeyIdController;
-
-  /// Access Key Secret 控制器
-  final TextEditingController accessKeySecretController;
-
-  /// Code 控制器
-  final TextEditingController codeController;
-
-  const HomeCredentialsPanel({
-    super.key,
-    required this.backendUrlController,
-    required this.appIdController,
-    required this.accessKeyIdController,
-    required this.accessKeySecretController,
-    required this.codeController,
-  });
+  const HomeCredentialsPanel({super.key});
 
   @override
   State<HomeCredentialsPanel> createState() => _HomeCredentialsPanelState();
 }
 
 class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
-  late bool _isProxyMode;
+  late TextEditingController _backendUrlController;
+  late TextEditingController _appIdController;
+  late TextEditingController _accessKeyIdController;
+  late TextEditingController _accessKeySecretController;
+  late TextEditingController _codeController;
 
   @override
   void initState() {
     super.initState();
-    _updateProxyMode();
+    _backendUrlController = TextEditingController();
+    _appIdController = TextEditingController();
+    _accessKeyIdController = TextEditingController();
+    _accessKeySecretController = TextEditingController();
+    _codeController = TextEditingController();
+    _syncControllers();
   }
 
-  void _updateProxyMode() {
-    setState(() {
-      _isProxyMode = widget.backendUrlController.text.trim().isNotEmpty;
-    });
+  @override
+  void dispose() {
+    _backendUrlController.dispose();
+    _appIdController.dispose();
+    _accessKeyIdController.dispose();
+    _accessKeySecretController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  /// 从 Cubit 状态同步控制器的值
+  void _syncControllers() {
+    final homePageCubit = context.read<HomePageCubit>();
+    final state = homePageCubit.state;
+
+    if (_backendUrlController.text != state.serverState.backendUrl) {
+      _backendUrlController.text = state.serverState.backendUrl;
+    }
+    if (_appIdController.text != state.credentialsState.appId) {
+      _appIdController.text = state.credentialsState.appId;
+    }
+    if (_accessKeyIdController.text != state.credentialsState.accessKeyId) {
+      _accessKeyIdController.text = state.credentialsState.accessKeyId;
+    }
+    if (_accessKeySecretController.text !=
+        state.credentialsState.accessKeySecret) {
+      _accessKeySecretController.text = state.credentialsState.accessKeySecret;
+    }
+    if (_codeController.text != state.credentialsState.code) {
+      _codeController.text = state.credentialsState.code;
+    }
   }
 
   void _handleInputChanged(String fieldName, String value) {
-    _updateProxyMode();
-
     // 直接更新底层 Cubit（自动保存）
     final serverCubit = context.read<ServerSettingsCubit>();
     final credentialsCubit = context.read<CredentialsSettingsCubit>();
@@ -82,16 +95,26 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    return BlocListener<HomePageCubit, HomePageState>(
+      listener: (context, state) {
+        // 状态改变时同步控制器
+        _syncControllers();
+      },
+      child: _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Web 端显示后端地址输入框（必填）
         if (kIsWeb) ...[
           buildBackendUrlInput(
-            controller: widget.backendUrlController,
+            controller: _backendUrlController,
             onChanged: (value) => _handleInputChanged('backendUrl', value),
           ),
-          if (!_isProxyMode)
+          if (_backendUrlController.text.trim().isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text(
@@ -104,8 +127,8 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
 
         // App ID
         buildAppIdInput(
-          controller: widget.appIdController,
-          isProxyMode: _isProxyMode,
+          controller: _appIdController,
+          isProxyMode: _backendUrlController.text.trim().isNotEmpty,
           onChanged: (value) => _handleInputChanged('appId', value),
         ),
         const SizedBox(height: 16),
@@ -113,14 +136,14 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
         // 非 Web 端且非代理模式时显示 AccessKey 字段
         if (!kIsWeb) ...[
           buildAccessKeyIdInput(
-            controller: widget.accessKeyIdController,
-            isProxyMode: _isProxyMode,
+            controller: _accessKeyIdController,
+            isProxyMode: _backendUrlController.text.trim().isNotEmpty,
             onChanged: (value) => _handleInputChanged('accessKeyId', value),
           ),
           const SizedBox(height: 16),
           buildAccessKeySecretInput(
-            controller: widget.accessKeySecretController,
-            isProxyMode: _isProxyMode,
+            controller: _accessKeySecretController,
+            isProxyMode: _backendUrlController.text.trim().isNotEmpty,
             onChanged: (value) => _handleInputChanged('accessKeySecret', value),
           ),
           const SizedBox(height: 16),
@@ -128,8 +151,8 @@ class _HomeCredentialsPanelState extends State<HomeCredentialsPanel> {
 
         // Code
         buildCodeInput(
-          controller: widget.codeController,
-          isProxyMode: _isProxyMode,
+          controller: _codeController,
+          isProxyMode: _backendUrlController.text.trim().isNotEmpty,
           onChanged: (value) => _handleInputChanged('code', value),
         ),
       ],
