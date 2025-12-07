@@ -64,23 +64,13 @@ RUN dart pub get
 # 编译应用程序为独立可执行文件
 RUN dart compile exe bin/bilibili_live_danmu_proxy.dart -o /app/server
 
-FROM debian:stable-slim
-
-# 设置非交互式环境
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=UTC
+FROM frolvlad/alpine-glibc
 
 # 设置工作目录
 WORKDIR /app
 
 # 从构建阶段复制编译的可执行文件
-COPY --from=build /app/server /app/server
-
-# 创建非 root 用户
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-
-# 切换到非 root 用户
-USER appuser
+COPY --from=build /app/server .
 
 # 公开默认端口
 EXPOSE 8080
