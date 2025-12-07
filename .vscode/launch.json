@@ -16,12 +16,12 @@
             "request": "launch",
             "type": "dart",
             "args": [
-                "--dart-entrypoint-args=--auto-start",
-                "--dart-entrypoint-args=--backend-url=http://127.0.0.1:8080",
+                "--dart-entrypoint-args=launch-auto_start=true",
+                "--dart-entrypoint-args=server-backend_url=http://127.0.0.1:8080",
                 "--web-browser-flag=--disable-web-security",
                 "--web-port=9080",
                 "--web-hostname=127.0.0.1",
-                "--web-launch-url=http://127.0.0.1:9080/?backend-url=http://127.0.0.1:8080&auto-start",
+                "--web-launch-url=http://127.0.0.1:9080/?launch-auto_start=true&server-backend_url=http://127.0.0.1:8080",
             ]
         },
         {
