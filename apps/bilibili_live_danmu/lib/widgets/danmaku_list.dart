@@ -146,20 +146,30 @@ class MessageListState extends State<MessageList> {
               ? const SizedBox.expand() // 空消息时占满整个区域
               : ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(8),
                   reverse: true, // 反转列表，使新消息在底部
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     // 因为列表反转了，所以索引也要反转
                     final message = _messages[_messages.length - 1 - index];
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        message.displayText,
-                        style: TextStyle(
-                          color: Color(state.textColor),
-                          fontSize: state.fontSize,
-                          height: 1.5,
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color(state.danmakuBackgroundColor),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          message.displayText,
+                          style: TextStyle(
+                            color: Color(state.textColor),
+                            fontSize: state.fontSize,
+                            height: 1.5,
+                          ),
                         ),
                       ),
                     );

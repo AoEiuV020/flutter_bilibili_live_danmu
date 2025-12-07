@@ -101,6 +101,13 @@ class _SettingsPanelState extends State<SettingsPanel> {
               Color(state.backgroundColor),
               (color) => cubit.setBackgroundColor(color.toARGB32()),
             ),
+
+            // 弹幕背景颜色
+            _buildColorSetting(
+              '弹幕背景颜色',
+              Color(state.danmakuBackgroundColor),
+              (color) => cubit.setDanmakuBackgroundColor(color.toARGB32()),
+            ),
           ],
         );
       },

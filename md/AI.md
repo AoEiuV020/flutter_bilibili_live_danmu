@@ -224,3 +224,9 @@ claude haiku 死活要来回瞎改，完全不知道在干嘛，
 1. 再加个脚本负责上传buildx所有架构到docker hub , 
 
 1. docker目录执行 ‘./buildx-push.sh aoeiuv020 bilibili_live_danmu_proxy 1.0.0’ 帮我修好，
+
+
+1. 添加弹幕背景色设置， 默认黑色全透明，
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart
+apps/bilibili_live_danmu/lib/blocs/settings/display_settings_cubit.dart 主要是这样加设置， 
+1. 背景使用跑道形，调整留白， 现有的间距砍一半，一半在背景内一半在背景外，
