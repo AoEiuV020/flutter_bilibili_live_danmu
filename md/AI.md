@@ -138,3 +138,5 @@ Logger参数的printer全都不传，
 1. 继续，
 
 AI死活改不好，
+
+1. 调整packages/bilibili_live_api_server/pubspec.yaml， 参考 packages/bilibili_live_api/pubspec.yaml

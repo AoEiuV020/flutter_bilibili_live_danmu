@@ -1,10 +1,11 @@
 name: bilibili_live_api_server
 description: Bilibili Live API HTTP proxy server that forwards requests to bilibili_live_api.
 version: 1.0.0
-repository: https://github.com/AoEiuV020/flutter_bilibili_live_danmu
+repository: https://github.com/AoEiuV020/flutter_bilibili_live_danmu/tree/main/packages/bilibili_live_api_server
+homepage: https://github.com/AoEiuV020/flutter_bilibili_live_danmu
 
 environment:
-  sdk: ^3.10.3
+  sdk: ^3.10.0
 
 resolution: workspace
 
