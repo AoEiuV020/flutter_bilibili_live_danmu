@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
+import 'blocs/settings/filter_settings_cubit.dart';
 import 'widgets/danmaku_list.dart';
 import 'widgets/settings_panel.dart';
 import 'utils/message_dispatcher.dart';
@@ -70,6 +72,7 @@ class _LivePageState extends State<LivePage> {
       startData: widget.startData,
       apiClient: widget.apiClient,
       messageDispatcher: _messageDispatcher,
+      filterSettingsCubit: context.read<FilterSettingsCubit>(),
     );
   }
 

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/settings_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/settings/display_settings_cubit.dart';
+import '../blocs/settings/filter_settings_cubit.dart';
+import '../blocs/settings/server_settings_cubit.dart';
 
 /// 设置面板
 class SettingsPanel extends StatefulWidget {
@@ -23,14 +26,12 @@ class _SettingsPanelState extends State<SettingsPanel> {
   final _backendUrlController = TextEditingController();
   final _httpServerPortController = TextEditingController();
 
-  SettingsProvider get _settings => SettingsProvider.instance;
-
   @override
   void initState() {
     super.initState();
-    _backendUrlController.text = _settings.serverBackendUrl.value;
-    _httpServerPortController.text = _settings.serverHttpServerPort.value
-        .toString();
+    final serverSettings = context.read<ServerSettingsCubit>().state;
+    _backendUrlController.text = serverSettings.backendUrl;
+    _httpServerPortController.text = serverSettings.httpServerPort.toString();
   }
 
   @override
@@ -105,172 +106,122 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _buildDisplaySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '显示设置',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
+    return BlocBuilder<DisplaySettingsCubit, DisplaySettingsState>(
+      builder: (context, state) {
+        final cubit = context.read<DisplaySettingsCubit>();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '显示设置',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
 
-        // 字体大小
-        ValueListenableBuilder<double>(
-          valueListenable: _settings.displayFontSize,
-          builder: (context, value, _) {
-            return _buildSliderSetting(
+            // 字体大小
+            _buildSliderSetting(
               '字体大小',
-              value,
+              state.fontSize,
               1,
               100,
-              (newValue) => _settings.setDisplayFontSize(newValue),
+              (newValue) => cubit.setFontSize(newValue),
               divisions: 99,
-              sliderLabel: '${value.toInt()}',
-            );
-          },
-        ),
+              sliderLabel: '${state.fontSize.toInt()}',
+            ),
 
-        // 显示时间
-        ValueListenableBuilder<int>(
-          valueListenable: _settings.displayDuration,
-          builder: (context, value, _) {
-            return _buildSliderSetting(
+            // 显示时间
+            _buildSliderSetting(
               '显示时间 (秒)',
-              value.toDouble(),
+              state.duration.toDouble(),
               30,
               300,
-              (newValue) => _settings.setDisplayDuration(newValue.toInt()),
+              (newValue) => cubit.setDuration(newValue.toInt()),
               divisions: 27,
-              sliderLabel: '$value秒',
-            );
-          },
-        ),
+              sliderLabel: '${state.duration}秒',
+            ),
 
-        // 文字颜色
-        ValueListenableBuilder<int>(
-          valueListenable: _settings.displayTextColor,
-          builder: (context, value, _) {
-            return _buildColorSetting(
+            // 文字颜色
+            _buildColorSetting(
               '文字颜色',
-              Color(value),
-              (color) => _settings.setDisplayTextColor(color.toARGB32()),
-            );
-          },
-        ),
+              Color(state.textColor),
+              (color) => cubit.setTextColor(color.toARGB32()),
+            ),
 
-        // 背景颜色
-        ValueListenableBuilder<int>(
-          valueListenable: _settings.displayBackgroundColor,
-          builder: (context, value, _) {
-            return _buildColorSetting(
+            // 背景颜色
+            _buildColorSetting(
               '背景颜色',
-              Color(value),
-              (color) => _settings.setDisplayBackgroundColor(color.toARGB32()),
-            );
-          },
-        ),
-      ],
+              Color(state.backgroundColor),
+              (color) => cubit.setBackgroundColor(color.toARGB32()),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildFilterSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '消息过滤',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
+    return BlocBuilder<FilterSettingsCubit, FilterSettingsState>(
+      builder: (context, state) {
+        final cubit = context.read<FilterSettingsCubit>();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '消息过滤',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowDanmaku,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '弹幕',
-              value,
-              (newValue) => _settings.setFilterShowDanmaku(newValue),
-            );
-          },
-        ),
+              state.showDanmaku,
+              (newValue) => cubit.setShowDanmaku(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowGift,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '礼物',
-              value,
-              (newValue) => _settings.setFilterShowGift(newValue),
-            );
-          },
-        ),
+              state.showGift,
+              (newValue) => cubit.setShowGift(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowSuperChat,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               'SC(醒目留言)',
-              value,
-              (newValue) => _settings.setFilterShowSuperChat(newValue),
-            );
-          },
-        ),
+              state.showSuperChat,
+              (newValue) => cubit.setShowSuperChat(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowGuard,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '大航海',
-              value,
-              (newValue) => _settings.setFilterShowGuard(newValue),
-            );
-          },
-        ),
+              state.showGuard,
+              (newValue) => cubit.setShowGuard(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowLike,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '点赞',
-              value,
-              (newValue) => _settings.setFilterShowLike(newValue),
-            );
-          },
-        ),
+              state.showLike,
+              (newValue) => cubit.setShowLike(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowEnter,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '进入房间',
-              value,
-              (newValue) => _settings.setFilterShowEnter(newValue),
-            );
-          },
-        ),
+              state.showEnter,
+              (newValue) => cubit.setShowEnter(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowLiveStart,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '开播提醒',
-              value,
-              (newValue) => _settings.setFilterShowLiveStart(newValue),
-            );
-          },
-        ),
+              state.showLiveStart,
+              (newValue) => cubit.setShowLiveStart(newValue),
+            ),
 
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.filterShowLiveEnd,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+            _buildSwitchSetting(
               '下播提醒',
-              value,
-              (newValue) => _settings.setFilterShowLiveEnd(newValue),
-            );
-          },
-        ),
-      ],
+              state.showLiveEnd,
+              (newValue) => cubit.setShowLiveEnd(newValue),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -396,57 +347,57 @@ class _SettingsPanelState extends State<SettingsPanel> {
 
   /// 构建服务器设置区域（仅非工作模式下显示）
   Widget _buildServerSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '服务器设置',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        // 后端地址输入框
-        TextField(
-          controller: _backendUrlController,
-          decoration: const InputDecoration(
-            labelText: '后端地址（可选）',
-            hintText: '留空使用官方 API',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.cloud),
-          ),
-          onChanged: (value) {
-            _settings.setServerBackendUrl(value);
-          },
-        ),
-        const SizedBox(height: 16),
-        // HTTP 服务开关（非 Web 端）
-        ValueListenableBuilder<bool>(
-          valueListenable: _settings.serverEnableHttpServer,
-          builder: (context, value, _) {
-            return _buildSwitchSetting(
+    return BlocBuilder<ServerSettingsCubit, ServerSettingsState>(
+      builder: (context, state) {
+        final cubit = context.read<ServerSettingsCubit>();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '服务器设置',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            // 后端地址输入框
+            TextField(
+              controller: _backendUrlController,
+              decoration: const InputDecoration(
+                labelText: '后端地址（可选）',
+                hintText: '留空使用官方 API',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.cloud),
+              ),
+              onChanged: (value) {
+                cubit.setBackendUrl(value);
+              },
+            ),
+            const SizedBox(height: 16),
+            // HTTP 服务开关（非 Web 端）
+            _buildSwitchSetting(
               '启用 HTTP 代理服务',
-              value,
-              (newValue) => _settings.setServerEnableHttpServer(newValue),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        // 服务端口
-        TextField(
-          controller: _httpServerPortController,
-          decoration: const InputDecoration(
-            labelText: 'HTTP 服务端口',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.numbers),
-          ),
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            final port = int.tryParse(value);
-            if (port != null) {
-              _settings.setServerHttpServerPort(port);
-            }
-          },
-        ),
-      ],
+              state.enableHttpServer,
+              (newValue) => cubit.setEnableHttpServer(newValue),
+            ),
+            const SizedBox(height: 16),
+            // 服务端口
+            TextField(
+              controller: _httpServerPortController,
+              decoration: const InputDecoration(
+                labelText: 'HTTP 服务端口',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.numbers),
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                final port = int.tryParse(value);
+                if (port != null) {
+                  cubit.setHttpServerPort(port);
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

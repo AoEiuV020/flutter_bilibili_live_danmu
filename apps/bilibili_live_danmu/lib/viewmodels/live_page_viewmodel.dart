@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
+import '../blocs/settings/filter_settings_cubit.dart';
 import '../managers/system_ui_manager.dart';
 import '../managers/heartbeat_manager.dart';
 import '../managers/websocket_message_handler.dart';
@@ -12,6 +13,7 @@ class LivePageViewModel {
   final AppStartData startData;
   final BilibiliLiveApiClient apiClient;
   final MessageDispatcher messageDispatcher;
+  final FilterSettingsCubit filterSettingsCubit;
 
   late SystemUiManager _systemUiManager;
   late HeartbeatManager _heartbeatManager;
@@ -24,6 +26,7 @@ class LivePageViewModel {
     required this.startData,
     required this.apiClient,
     required this.messageDispatcher,
+    required this.filterSettingsCubit,
   });
 
   /// 初始化
@@ -40,7 +43,7 @@ class LivePageViewModel {
     );
     _heartbeatManager.start();
 
-    // 初始化消息处理器（WebSocketMessageHandler 会自己从 SettingsProvider 获取设置）
+    // 初始化消息处理器
     _messageHandler = WebSocketMessageHandler(
       onDanmaku: (username, content) {
         messageDispatcher.dispatchDanmaku(username, content);
@@ -48,6 +51,7 @@ class LivePageViewModel {
       onInfo: (content) {
         messageDispatcher.dispatchInfo(content);
       },
+      filterSettings: filterSettingsCubit,
     );
 
     // 检查 TTS 初始化状态

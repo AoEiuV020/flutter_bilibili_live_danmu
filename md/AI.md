@@ -156,3 +156,16 @@ AI死活改不好，
 
 1. apps/bilibili_live_danmu/lib/viewmodels/live_page_viewmodel.dart:62 一大堆的设置传递根本没有意义啊， 反而导致设置不实时生效了，
 应该在需要的地方自己使用SettingsProvider.instance获取value notifier监听，
+
+1. apps/bilibili_live_danmu 设置项的状态管理改用bloc，要求封装好让使用添加字段最简化，
+1. apps/bilibili_live_danmu/lib/models/settings_keys.dart 所有设置项分四个板块，分不同文件多个Cubit处理，
+1. 最终效果要确保添加设置项非常简单， 尽量集中， 包括默认值禁止硬编码多次，
+
+
+1. apps/bilibili_live_danmu/lib/blocs/settings/display_settings_cubit.dart:48 这些load应该不需要引用默认值，可以直接从state.copyWith，这样就不需要多一个默认值了，这样默认值就可以直接硬编码到 apps/bilibili_live_danmu/lib/blocs/settings/display_settings_cubit.dart:13 ，只写一次，
+1. apps/bilibili_live_danmu/lib/models/settings 也可以删除了，毕竟里面的key都只在apps/bilibili_live_danmu/lib/blocs/settings对应文件里使用， 直接定义仅当前文件可见的常量就行了，
+1. 继续，
+
+
+1. 之前卡住了，你检查一下bloc改造是否完成，完成剩余工作，
+

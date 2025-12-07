@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'blocs/settings/credentials_settings_cubit.dart';
+import 'blocs/settings/display_settings_cubit.dart';
+import 'blocs/settings/filter_settings_cubit.dart';
+import 'blocs/settings/server_settings_cubit.dart';
 import 'home_page.dart';
 import 'options/app_options.dart';
 import 'options/parse.dart';
@@ -22,21 +28,33 @@ void main(List<String> args) async {
   final options = await parseAppOptions(args);
   AppOptions.setInstance(options);
 
-  runApp(const MyApp());
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+
+  const MyApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '哔哩哔哩直播弹幕',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => DisplaySettingsCubit(prefs)),
+        BlocProvider(create: (_) => FilterSettingsCubit(prefs)),
+        BlocProvider(create: (_) => CredentialsSettingsCubit(prefs)),
+        BlocProvider(create: (_) => ServerSettingsCubit(prefs)),
+      ],
+      child: MaterialApp(
+        title: '哔哩哔哩直播弹幕',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          useMaterial3: true,
+        ),
+        home: const HomePage(),
       ),
-      home: const HomePage(),
     );
   }
 }
