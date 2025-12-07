@@ -219,3 +219,8 @@ claude haiku 死活要来回瞎改，完全不知道在干嘛，
 1. docker/Dockerfile:34 builduser直接改成app，名字是app，家目录是/app, 
 1. flutter安装换个位置，
 1. flutter clone之类的几个命令不要合并，
+
+1. 在docker目录添加脚本，负责buildx跨架构编译，需要支持arm64和amd64，
+1. 再加个脚本负责上传buildx所有架构到docker hub , 
+
+1. docker目录执行 ‘./buildx-push.sh aoeiuv020 bilibili_live_danmu_proxy 1.0.0’ 帮我修好，
