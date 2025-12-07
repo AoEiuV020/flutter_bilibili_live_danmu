@@ -246,33 +246,58 @@ class _SettingsPanelState extends State<SettingsPanel> {
     );
   }
 
+  /// 显示颜色选择对话框
+  ///
+  /// 使用 [ColorPicker] 实现完整的颜色选择功能：
+  /// - 支持色彩、饱和度、明度调整
+  /// - 支持透明度（Alpha）调整
+  /// - 对话框背景透明（barrierColor: Colors.transparent）
+  ///
+  /// 参数:
+  ///   currentColor - 当前选中的颜色
+  ///   onChanged - 颜色变化回调，实时更新设置
   void _showColorPicker(Color currentColor, ValueChanged<Color> onChanged) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('选择颜色'),
-        contentPadding: const EdgeInsets.all(16),
-        content: SingleChildScrollView(
-          child: ColorPicker(
-            pickerColor: currentColor,
-            onColorChanged: (color) {
-              onChanged(color);
-            },
-            pickerAreaHeightPercent: 0.8,
-            enableAlpha: true,
-            displayThumbColor: true,
-            portraitOnly: false,
-            hexInputController: TextEditingController(
-              text: currentColor.toHexString(),
-            ),
+      barrierColor: Colors.transparent,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题
+              const Text(
+                '选择颜色',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              // 颜色选择器
+              SingleChildScrollView(
+                child: ColorPicker(
+                  pickerColor: currentColor,
+                  onColorChanged: (color) {
+                    onChanged(color);
+                  },
+                  pickerAreaHeightPercent: 0.8,
+                  enableAlpha: true,
+                  displayThumbColor: true,
+                  portraitOnly: false,
+                  hexInputController: TextEditingController(
+                    text: currentColor.toHexString(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 确定按钮
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('确定'),
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
       ),
     );
   }

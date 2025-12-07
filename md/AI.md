@@ -179,3 +179,5 @@ AI死活改不好，
 1. apps/bilibili_live_danmu/lib/live_page.dart:255 不是这样， live页要把整个设置面板包括标题栏一起设置唯一的背景和圆角，panel本身不需要，
 
 还是放弃圆角，漏出一点黑色太丑，
+
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart:252 选择颜色对话框不要背景半透明处理， 改好了加上注释， 方便预览效果，
