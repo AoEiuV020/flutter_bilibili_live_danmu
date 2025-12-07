@@ -181,3 +181,11 @@ AI死活改不好，
 还是放弃圆角，漏出一点黑色太丑，
 
 1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart:252 选择颜色对话框不要背景半透明处理， 改好了加上注释， 方便预览效果，
+
+1. docker目录添加一些docker相关的文件，用来编译运行 apps/bilibili_live_danmu_proxy 
+1. dockerfile需要包含一个依赖cirrusci/flutter:stable编译得到可执行文件，一个依赖alpine安装glibc上传可执行文件运行，
+1. 运行需要能传入参数config文件路径参数，
+1. 还要有个docker compose.yaml文件， 能直接挂载当前目录下的config.properties文件运行，
+1. script目录添加脚本负责进入docker目录用docker compose构建和运行容器，
+
+1. docker compose简单一点， 不必要的都别写， 尤其env明明就是默认值，就别写上了， 

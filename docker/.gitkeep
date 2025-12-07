@@ -1,0 +1,32 @@
+# Docker 项目说明
+
+此目录包含 Bilibili Live Danmu Proxy 的 Docker 部署配置。
+
+## 文件列表
+
+- `Dockerfile`: 多阶段构建配置文件
+  - 使用 cirrusci/flutter:stable 编译 Dart 应用
+  - 使用 alpine 运行时镜像减小镜像体积
+  
+- `docker-compose.yaml`: Docker Compose 服务编排配置
+  - 定义 bilibili-live-danmu-proxy 服务
+  - 自动挂载配置文件
+  - 包含健康检查和日志配置
+
+- `README.md`: 详细的使用说明和配置指南
+
+- `.dockerignore`: Docker 构建时忽略的文件（推荐添加）
+
+## 快速使用
+
+```bash
+# 使用脚本构建和运行
+./script/docker_build.sh
+./script/docker_run.sh
+
+# 或直接使用 docker-compose
+cd docker
+docker-compose up -d
+```
+
+详见 `docker/README.md`
