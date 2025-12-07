@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bilibili_live_api/bilibili_live_api.dart';
-import 'models/settings.dart';
+import 'models/settings_provider.dart';
 import 'live_page.dart';
 import 'options/app_options.dart';
 import 'settings_page.dart';
@@ -28,8 +28,8 @@ class _HomePageState extends State<HomePage> {
 
   bool _isLoading = false;
 
-  // 服务器设置
-  late SettingsManager _settingsManager;
+  // 设置 Provider
+  SettingsProvider get _settings => SettingsProvider.instance;
 
   /// 命令行参数
   AppOptions get _appOptions => AppOptions.instance;
@@ -40,13 +40,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _settingsManager = SettingsManager();
     _initializeAsync();
   }
 
   /// 异步初始化：加载配置和 TTS，完成后检查自动连接
   void _initializeAsync() async {
     try {
+      // 先初始化 SettingsProvider
+      await _settings.initialize();
       await Future.wait([_loadConfig(), _initializeTts()]);
       // 所有初始化完成后，检查是否需要自动开始
       _checkAutoStart();
@@ -102,34 +103,31 @@ class _HomePageState extends State<HomePage> {
         logger.w('assets 配置文件读取失败: $e');
       }
 
-      // 加载 SettingsManager
-      await _settingsManager.load();
-
       setState(() {
-        final creds = _settingsManager.credentialsSettings;
+        final credAppId = _settings.credentialsAppId.value;
+        final credAccessKeyId = _settings.credentialsAccessKeyId.value;
+        final credAccessKeySecret = _settings.credentialsAccessKeySecret.value;
+        final credCode = _settings.credentialsCode.value;
         // 优先级：命令行参数 > --config 文件 > 已保存设置 > assets 配置
         _appIdController.text =
             _appOptions.appId ??
-            (creds.appId.isNotEmpty
-                ? creds.appId
-                : (assetsConfig['app_id'] ?? ''));
+            (credAppId.isNotEmpty ? credAppId : (assetsConfig['app_id'] ?? ''));
         _accessKeyIdController.text =
             _appOptions.accessKeyId ??
-            (creds.accessKeyId.isNotEmpty
-                ? creds.accessKeyId
+            (credAccessKeyId.isNotEmpty
+                ? credAccessKeyId
                 : (assetsConfig['access_key_id'] ?? ''));
         _accessKeySecretController.text =
             _appOptions.accessKeySecret ??
-            (creds.accessKeySecret.isNotEmpty
-                ? creds.accessKeySecret
+            (credAccessKeySecret.isNotEmpty
+                ? credAccessKeySecret
                 : (assetsConfig['access_key_secret'] ?? ''));
         _codeController.text =
             _appOptions.code ??
-            (creds.code.isNotEmpty ? creds.code : (assetsConfig['code'] ?? ''));
+            (credCode.isNotEmpty ? credCode : (assetsConfig['code'] ?? ''));
         // 加载后端地址（优先使用命令行参数或已保存设置）
         _backendUrlController.text =
-            _appOptions.backendUrl ??
-            _settingsManager.serverSettings.backendUrl;
+            _appOptions.backendUrl ?? _settings.serverBackendUrl.value;
       });
     } catch (e) {
       if (mounted) {
@@ -154,20 +152,13 @@ class _HomePageState extends State<HomePage> {
 
   /// 保存配置
   Future<void> _saveConfig() async {
-    final credentials = CredentialsSettings(
-      appId: _appIdController.text,
-      accessKeyId: _accessKeyIdController.text,
-      accessKeySecret: _accessKeySecretController.text,
-      code: _codeController.text,
+    await _settings.setCredentialsAppId(_appIdController.text);
+    await _settings.setCredentialsAccessKeyId(_accessKeyIdController.text);
+    await _settings.setCredentialsAccessKeySecret(
+      _accessKeySecretController.text,
     );
-    await _settingsManager.saveCredentialsSettings(credentials);
-
-    final serverSettings = ServerSettings(
-      backendUrl: _backendUrlController.text,
-      enableHttpServer: _settingsManager.serverSettings.enableHttpServer,
-      httpServerPort: _settingsManager.serverSettings.httpServerPort,
-    );
-    await _settingsManager.saveServerSettings(serverSettings);
+    await _settings.setCredentialsCode(_codeController.text);
+    await _settings.setServerBackendUrl(_backendUrlController.text);
   }
 
   /// 开始直播
@@ -210,7 +201,6 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
 
       // 成功后跳转到第二页
-      final serverSettings = _settingsManager.serverSettings;
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => LivePage(
@@ -219,11 +209,11 @@ class _HomePageState extends State<HomePage> {
                 : int.tryParse(_appIdController.text),
             startData: startData,
             apiClient: client,
-            enableHttpServer: serverSettings.enableHttpServer && !kIsWeb,
+            enableHttpServer: _settings.serverEnableHttpServer.value && !kIsWeb,
             accessKeyId: _accessKeyIdController.text,
             accessKeySecret: _accessKeySecretController.text,
             code: _codeController.text.isEmpty ? null : _codeController.text,
-            httpServerPort: serverSettings.httpServerPort,
+            httpServerPort: _settings.serverHttpServerPort.value,
           ),
         ),
       );

@@ -5,7 +5,6 @@ import 'package:bilibili_live_api/bilibili_live_api.dart';
 import 'package:bilibili_live_api_server/bilibili_live_api_server.dart';
 import 'widgets/danmaku_list.dart';
 import 'widgets/settings_panel.dart';
-import 'models/settings.dart';
 import 'utils/message_dispatcher.dart';
 import 'utils/log_consumer.dart';
 import 'utils/ui_consumer.dart';
@@ -45,11 +44,8 @@ class _LivePageState extends State<LivePage> {
   bool _showSettings = false;
   final GlobalKey<MessageListState> _messageListKey = GlobalKey();
 
-  late SettingsManager _settingsManager;
   late MessageDispatcher _messageDispatcher;
   late LivePageViewModel _viewModel;
-
-  DisplaySettings _displaySettings = DisplaySettings.defaultSettings();
 
   /// HTTP 代理服务器
   BilibiliLiveApiServer? _httpServer;
@@ -64,9 +60,6 @@ class _LivePageState extends State<LivePage> {
 
   /// 同步初始化组件（立即完成，UI渲染不会出错）
   void _initializeComponentsSync() {
-    // 初始化设置管理器
-    _settingsManager = SettingsManager();
-
     // 初始化消息分发器
     _messageDispatcher = MessageDispatcher();
     _setupMessageConsumers();
@@ -77,28 +70,17 @@ class _LivePageState extends State<LivePage> {
       startData: widget.startData,
       apiClient: widget.apiClient,
       messageDispatcher: _messageDispatcher,
-      settingsManager: _settingsManager,
     );
   }
 
   /// 异步初始化（加载设置、连接WebSocket等）
   Future<void> _initializeAsync() async {
-    // 加载设置
-    await _settingsManager.load();
-
     // 初始化 ViewModel（启动 WebSocket 等）
     await _viewModel.initialize();
 
     // 启动 HTTP 服务器（如果启用且非 Web 端）
     if (widget.enableHttpServer && !kIsWeb) {
       await _startHttpServer();
-    }
-
-    // 更新UI状态
-    if (mounted) {
-      setState(() {
-        _displaySettings = _settingsManager.displaySettings;
-      });
     }
   }
 
@@ -215,24 +197,14 @@ class _LivePageState extends State<LivePage> {
     if (isPortrait) {
       return Column(
         children: [
-          Expanded(
-            child: MessageList(
-              key: _messageListKey,
-              displaySettings: _displaySettings,
-            ),
-          ),
+          Expanded(child: MessageList(key: _messageListKey)),
           if (_showSettings) _buildSettingsPanel(screenSize.height / 2, null),
         ],
       );
     } else {
       return Row(
         children: [
-          Expanded(
-            child: MessageList(
-              key: _messageListKey,
-              displaySettings: _displaySettings,
-            ),
-          ),
+          Expanded(child: MessageList(key: _messageListKey)),
           if (_showSettings) _buildSettingsPanel(null, screenSize.width / 2),
         ],
       );
@@ -245,15 +217,6 @@ class _LivePageState extends State<LivePage> {
       height: height,
       width: width,
       child: SettingsPanel(
-        settingsManager: _settingsManager,
-        onDisplaySettingsChanged: (settings) {
-          setState(() {
-            _displaySettings = settings;
-          });
-        },
-        onFilterSettingsChanged: (settings) {
-          _viewModel.updateFilterSettings(settings);
-        },
         onClose: () {
           setState(() {
             _showSettings = false;

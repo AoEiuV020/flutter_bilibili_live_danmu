@@ -3,7 +3,6 @@ import 'package:bilibili_live_api/bilibili_live_api.dart';
 import '../managers/system_ui_manager.dart';
 import '../managers/heartbeat_manager.dart';
 import '../managers/websocket_message_handler.dart';
-import '../models/settings.dart';
 import '../utils/message_dispatcher.dart';
 import '../utils/tts_manager.dart';
 
@@ -13,7 +12,6 @@ class LivePageViewModel {
   final AppStartData startData;
   final BilibiliLiveApiClient apiClient;
   final MessageDispatcher messageDispatcher;
-  final SettingsManager settingsManager;
 
   late SystemUiManager _systemUiManager;
   late HeartbeatManager _heartbeatManager;
@@ -26,7 +24,6 @@ class LivePageViewModel {
     required this.startData,
     required this.apiClient,
     required this.messageDispatcher,
-    required this.settingsManager,
   });
 
   /// 初始化
@@ -43,9 +40,8 @@ class LivePageViewModel {
     );
     _heartbeatManager.start();
 
-    // 初始化消息处理器
+    // 初始化消息处理器（WebSocketMessageHandler 会自己从 SettingsProvider 获取设置）
     _messageHandler = WebSocketMessageHandler(
-      filterSettings: settingsManager.filterSettings,
       onDanmaku: (username, content) {
         messageDispatcher.dispatchDanmaku(username, content);
       },
@@ -132,19 +128,6 @@ class LivePageViewModel {
         messageDispatcher.dispatchInfo('连接已恢复');
       }
     }
-  }
-
-  /// 更新消息过滤设置
-  void updateFilterSettings(MessageFilterSettings filterSettings) {
-    _messageHandler = WebSocketMessageHandler(
-      filterSettings: filterSettings,
-      onDanmaku: (username, content) {
-        messageDispatcher.dispatchDanmaku(username, content);
-      },
-      onInfo: (content) {
-        messageDispatcher.dispatchInfo(content);
-      },
-    );
   }
 
   /// 添加测试弹幕

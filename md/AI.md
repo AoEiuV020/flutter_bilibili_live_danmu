@@ -147,3 +147,12 @@ AI死活改不好，
 
 1. 帮我完成packages/bilibili_live_api_server/README.md， 
 1. 参考packages/bilibili_live_api/README.md， 看看bilibili_live_api_server的实际功能写个简介，
+
+
+1. apps/bilibili_live_danmu 整个设置功能重构一下，所有设置项使用value provider通知ui刷新，
+1. 所有设置项平铺，不再分几个settings类，只在key prefix上区分，
+1. 单独封装一个常量类保存所有设置key，和默认值，
+1. 注意类型，设置和读取要完全一致，
+
+1. apps/bilibili_live_danmu/lib/viewmodels/live_page_viewmodel.dart:62 一大堆的设置传递根本没有意义啊， 反而导致设置不实时生效了，
+应该在需要的地方自己使用SettingsProvider.instance获取value notifier监听，

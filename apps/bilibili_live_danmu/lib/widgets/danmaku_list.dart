@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/settings.dart';
+import '../models/settings_provider.dart';
 
 /// 消息类型
 enum MessageType {
@@ -31,9 +31,7 @@ class MessageItem {
 
 /// 消息列表组件（弹幕+提示）
 class MessageList extends StatefulWidget {
-  final DisplaySettings displaySettings;
-
-  const MessageList({super.key, required this.displaySettings});
+  const MessageList({super.key});
 
   @override
   State<MessageList> createState() => MessageListState();
@@ -45,25 +43,19 @@ class MessageListState extends State<MessageList> {
   Timer? _cleanupTimer;
   int _cleanupIntervalSeconds = 30;
 
+  SettingsProvider get _settings => SettingsProvider.instance;
+
   @override
   void initState() {
     super.initState();
     _updateCleanupTimer();
-  }
-
-  @override
-  void didUpdateWidget(MessageList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.displaySettings.displayDuration !=
-        widget.displaySettings.displayDuration) {
-      _updateCleanupTimer();
-    }
+    // 监听显示时间变化
+    _settings.displayDuration.addListener(_updateCleanupTimer);
   }
 
   void _updateCleanupTimer() {
     _cleanupTimer?.cancel();
-    _cleanupIntervalSeconds = (widget.displaySettings.displayDuration / 4)
-        .ceil();
+    _cleanupIntervalSeconds = (_settings.displayDuration.value / 4).ceil();
     _cleanupTimer = Timer.periodic(
       Duration(seconds: _cleanupIntervalSeconds),
       (_) => _removeExpiredMessages(),
@@ -72,6 +64,7 @@ class MessageListState extends State<MessageList> {
 
   @override
   void dispose() {
+    _settings.displayDuration.removeListener(_updateCleanupTimer);
     _cleanupTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
@@ -119,7 +112,7 @@ class MessageListState extends State<MessageList> {
 
     final now = DateTime.now();
     final expireTime = now.subtract(
-      Duration(seconds: widget.displaySettings.displayDuration),
+      Duration(seconds: _settings.displayDuration.value),
     );
 
     setState(() {
@@ -144,31 +137,47 @@ class MessageListState extends State<MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: widget.displaySettings.backgroundColor,
-      child: _messages.isEmpty
-          ? const SizedBox.expand() // 空消息时占满整个区域
-          : ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              reverse: true, // 反转列表，使新消息在底部
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                // 因为列表反转了，所以索引也要反转
-                final message = _messages[_messages.length - 1 - index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    message.displayText,
-                    style: TextStyle(
-                      color: widget.displaySettings.textColor,
-                      fontSize: widget.displaySettings.fontSize,
-                      height: 1.5,
-                    ),
-                  ),
-                );
-              },
-            ),
+    return ValueListenableBuilder<int>(
+      valueListenable: _settings.displayBackgroundColor,
+      builder: (context, backgroundColor, _) {
+        return Container(
+          color: Color(backgroundColor),
+          child: _messages.isEmpty
+              ? const SizedBox.expand() // 空消息时占满整个区域
+              : ValueListenableBuilder<int>(
+                  valueListenable: _settings.displayTextColor,
+                  builder: (context, textColor, _) {
+                    return ValueListenableBuilder<double>(
+                      valueListenable: _settings.displayFontSize,
+                      builder: (context, fontSize, _) {
+                        return ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(16),
+                          reverse: true, // 反转列表，使新消息在底部
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            // 因为列表反转了，所以索引也要反转
+                            final message =
+                                _messages[_messages.length - 1 - index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(
+                                message.displayText,
+                                style: TextStyle(
+                                  color: Color(textColor),
+                                  fontSize: fontSize,
+                                  height: 1.5,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+        );
+      },
     );
   }
 }

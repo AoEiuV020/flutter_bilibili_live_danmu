@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/settings.dart';
+import '../models/settings_provider.dart';
 
 /// 设置面板
 class SettingsPanel extends StatefulWidget {
-  final SettingsManager settingsManager;
   final VoidCallback onClose;
-  final Function(DisplaySettings)? onDisplaySettingsChanged;
-  final Function(MessageFilterSettings)? onFilterSettingsChanged;
-  final Function(ServerSettings)? onServerSettingsChanged;
 
   /// 是否处于工作中（直播中）
   /// 非工作模式下会显示服务器设置
@@ -15,11 +11,7 @@ class SettingsPanel extends StatefulWidget {
 
   const SettingsPanel({
     super.key,
-    required this.settingsManager,
     required this.onClose,
-    this.onDisplaySettingsChanged,
-    this.onFilterSettingsChanged,
-    this.onServerSettingsChanged,
     this.isWorking = true,
   });
 
@@ -28,22 +20,17 @@ class SettingsPanel extends StatefulWidget {
 }
 
 class _SettingsPanelState extends State<SettingsPanel> {
-  late DisplaySettings _displaySettings;
-  late MessageFilterSettings _filterSettings;
-  late ServerSettings _serverSettings;
-
   final _backendUrlController = TextEditingController();
   final _httpServerPortController = TextEditingController();
+
+  SettingsProvider get _settings => SettingsProvider.instance;
 
   @override
   void initState() {
     super.initState();
-    _displaySettings = widget.settingsManager.displaySettings;
-    _filterSettings = widget.settingsManager.filterSettings;
-    _serverSettings = widget.settingsManager.serverSettings;
-
-    _backendUrlController.text = _serverSettings.backendUrl;
-    _httpServerPortController.text = _serverSettings.httpServerPort.toString();
+    _backendUrlController.text = _settings.serverBackendUrl.value;
+    _httpServerPortController.text = _settings.serverHttpServerPort.value
+        .toString();
   }
 
   @override
@@ -51,30 +38,6 @@ class _SettingsPanelState extends State<SettingsPanel> {
     _backendUrlController.dispose();
     _httpServerPortController.dispose();
     super.dispose();
-  }
-
-  void _updateDisplaySettings(DisplaySettings settings) {
-    setState(() {
-      _displaySettings = settings;
-    });
-    widget.settingsManager.saveDisplaySettings(settings);
-    widget.onDisplaySettingsChanged?.call(settings);
-  }
-
-  void _updateFilterSettings(MessageFilterSettings settings) {
-    setState(() {
-      _filterSettings = settings;
-    });
-    widget.settingsManager.saveFilterSettings(settings);
-    widget.onFilterSettingsChanged?.call(settings);
-  }
-
-  void _updateServerSettings(ServerSettings settings) {
-    setState(() {
-      _serverSettings = settings;
-    });
-    widget.settingsManager.saveServerSettings(settings);
-    widget.onServerSettingsChanged?.call(settings);
   }
 
   @override
@@ -152,47 +115,59 @@ class _SettingsPanelState extends State<SettingsPanel> {
         const SizedBox(height: 16),
 
         // 字体大小
-        _buildSliderSetting(
-          '字体大小',
-          _displaySettings.fontSize,
-          1,
-          100,
-          (value) => _updateDisplaySettings(
-            _displaySettings.copyWith(fontSize: value),
-          ),
-          divisions: 99,
-          sliderLabel: '${_displaySettings.fontSize.toInt()}',
+        ValueListenableBuilder<double>(
+          valueListenable: _settings.displayFontSize,
+          builder: (context, value, _) {
+            return _buildSliderSetting(
+              '字体大小',
+              value,
+              1,
+              100,
+              (newValue) => _settings.setDisplayFontSize(newValue),
+              divisions: 99,
+              sliderLabel: '${value.toInt()}',
+            );
+          },
         ),
 
         // 显示时间
-        _buildSliderSetting(
-          '显示时间 (秒)',
-          _displaySettings.displayDuration.toDouble(),
-          30,
-          300,
-          (value) => _updateDisplaySettings(
-            _displaySettings.copyWith(displayDuration: value.toInt()),
-          ),
-          divisions: 27,
-          sliderLabel: '${_displaySettings.displayDuration}秒',
+        ValueListenableBuilder<int>(
+          valueListenable: _settings.displayDuration,
+          builder: (context, value, _) {
+            return _buildSliderSetting(
+              '显示时间 (秒)',
+              value.toDouble(),
+              30,
+              300,
+              (newValue) => _settings.setDisplayDuration(newValue.toInt()),
+              divisions: 27,
+              sliderLabel: '$value秒',
+            );
+          },
         ),
 
         // 文字颜色
-        _buildColorSetting(
-          '文字颜色',
-          _displaySettings.textColor,
-          (color) => _updateDisplaySettings(
-            _displaySettings.copyWith(textColor: color),
-          ),
+        ValueListenableBuilder<int>(
+          valueListenable: _settings.displayTextColor,
+          builder: (context, value, _) {
+            return _buildColorSetting(
+              '文字颜色',
+              Color(value),
+              (color) => _settings.setDisplayTextColor(color.toARGB32()),
+            );
+          },
         ),
 
         // 背景颜色
-        _buildColorSetting(
-          '背景颜色',
-          _displaySettings.backgroundColor,
-          (color) => _updateDisplaySettings(
-            _displaySettings.copyWith(backgroundColor: color),
-          ),
+        ValueListenableBuilder<int>(
+          valueListenable: _settings.displayBackgroundColor,
+          builder: (context, value, _) {
+            return _buildColorSetting(
+              '背景颜色',
+              Color(value),
+              (color) => _settings.setDisplayBackgroundColor(color.toARGB32()),
+            );
+          },
         ),
       ],
     );
@@ -208,64 +183,92 @@ class _SettingsPanelState extends State<SettingsPanel> {
         ),
         const SizedBox(height: 16),
 
-        _buildSwitchSetting(
-          '弹幕',
-          _filterSettings.showDanmaku,
-          (value) => _updateFilterSettings(
-            _filterSettings.copyWith(showDanmaku: value),
-          ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowDanmaku,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '弹幕',
+              value,
+              (newValue) => _settings.setFilterShowDanmaku(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          '礼物',
-          _filterSettings.showGift,
-          (value) =>
-              _updateFilterSettings(_filterSettings.copyWith(showGift: value)),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowGift,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '礼物',
+              value,
+              (newValue) => _settings.setFilterShowGift(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          'SC(醒目留言)',
-          _filterSettings.showSuperChat,
-          (value) => _updateFilterSettings(
-            _filterSettings.copyWith(showSuperChat: value),
-          ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowSuperChat,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              'SC(醒目留言)',
+              value,
+              (newValue) => _settings.setFilterShowSuperChat(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          '大航海',
-          _filterSettings.showGuard,
-          (value) =>
-              _updateFilterSettings(_filterSettings.copyWith(showGuard: value)),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowGuard,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '大航海',
+              value,
+              (newValue) => _settings.setFilterShowGuard(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          '点赞',
-          _filterSettings.showLike,
-          (value) =>
-              _updateFilterSettings(_filterSettings.copyWith(showLike: value)),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowLike,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '点赞',
+              value,
+              (newValue) => _settings.setFilterShowLike(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          '进入房间',
-          _filterSettings.showEnter,
-          (value) =>
-              _updateFilterSettings(_filterSettings.copyWith(showEnter: value)),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowEnter,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '进入房间',
+              value,
+              (newValue) => _settings.setFilterShowEnter(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          '开播提醒',
-          _filterSettings.showLiveStart,
-          (value) => _updateFilterSettings(
-            _filterSettings.copyWith(showLiveStart: value),
-          ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowLiveStart,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '开播提醒',
+              value,
+              (newValue) => _settings.setFilterShowLiveStart(newValue),
+            );
+          },
         ),
 
-        _buildSwitchSetting(
-          '下播提醒',
-          _filterSettings.showLiveEnd,
-          (value) => _updateFilterSettings(
-            _filterSettings.copyWith(showLiveEnd: value),
-          ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.filterShowLiveEnd,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '下播提醒',
+              value,
+              (newValue) => _settings.setFilterShowLiveEnd(newValue),
+            );
+          },
         ),
       ],
     );
@@ -410,31 +413,22 @@ class _SettingsPanelState extends State<SettingsPanel> {
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.cloud),
           ),
-          onChanged: (_) {
-            final port = int.tryParse(_httpServerPortController.text) ?? 18080;
-            _updateServerSettings(
-              ServerSettings(
-                backendUrl: _backendUrlController.text,
-                enableHttpServer: _serverSettings.enableHttpServer,
-                httpServerPort: port,
-              ),
-            );
+          onChanged: (value) {
+            _settings.setServerBackendUrl(value);
           },
         ),
         const SizedBox(height: 16),
         // HTTP 服务开关（非 Web 端）
-        _buildSwitchSetting('启用 HTTP 代理服务', _serverSettings.enableHttpServer, (
-          value,
-        ) {
-          final port = int.tryParse(_httpServerPortController.text) ?? 18080;
-          _updateServerSettings(
-            ServerSettings(
-              backendUrl: _backendUrlController.text,
-              enableHttpServer: value,
-              httpServerPort: port,
-            ),
-          );
-        }),
+        ValueListenableBuilder<bool>(
+          valueListenable: _settings.serverEnableHttpServer,
+          builder: (context, value, _) {
+            return _buildSwitchSetting(
+              '启用 HTTP 代理服务',
+              value,
+              (newValue) => _settings.setServerEnableHttpServer(newValue),
+            );
+          },
+        ),
         const SizedBox(height: 16),
         // 服务端口
         TextField(
@@ -445,15 +439,11 @@ class _SettingsPanelState extends State<SettingsPanel> {
             prefixIcon: Icon(Icons.numbers),
           ),
           keyboardType: TextInputType.number,
-          onChanged: (_) {
-            final port = int.tryParse(_httpServerPortController.text) ?? 18080;
-            _updateServerSettings(
-              ServerSettings(
-                backendUrl: _backendUrlController.text,
-                enableHttpServer: _serverSettings.enableHttpServer,
-                httpServerPort: port,
-              ),
-            );
+          onChanged: (value) {
+            final port = int.tryParse(value);
+            if (port != null) {
+              _settings.setServerHttpServerPort(port);
+            }
           },
         ),
       ],
