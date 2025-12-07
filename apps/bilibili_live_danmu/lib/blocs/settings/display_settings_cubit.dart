@@ -17,7 +17,7 @@ class DisplaySettingsState extends Equatable {
   const DisplaySettingsState({
     this.fontSize = 20.0,
     this.textColor = 0xFFFFFFFF, // Colors.white
-    this.backgroundColor = 0xFF000000, // Colors.black
+    this.backgroundColor = 0x00000000, // 透明，实际是黑色，
     this.duration = 120,
   });
 
