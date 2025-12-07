@@ -51,7 +51,6 @@ class MyApp extends StatelessWidget {
         title: '哔哩哔哩直播弹幕',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          scaffoldBackgroundColor: Colors.transparent,
           useMaterial3: true,
         ),
         home: const HomePage(),

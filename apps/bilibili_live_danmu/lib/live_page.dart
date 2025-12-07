@@ -175,7 +175,7 @@ class _LivePageState extends State<LivePage> {
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         body: SafeArea(
           child: GestureDetector(
             onTap: _showBack,
