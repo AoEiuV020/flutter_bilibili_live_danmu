@@ -230,3 +230,14 @@ claude haiku 死活要来回瞎改，完全不知道在干嘛，
 1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart
 apps/bilibili_live_danmu/lib/blocs/settings/display_settings_cubit.dart 主要是这样加设置， 
 1. 背景使用跑道形，调整留白， 现有的间距砍一半，一半在背景内一半在背景外，
+
+
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart 这个太大了， 按几个设置板块拆分成多个小组件， 代码尽量复用，
+1. 把剩下的 apps/bilibili_live_danmu/lib/blocs/settings/credentials_settings_cubit.dart 也加一个设置板块到 settings panel 里，
+
+
+1. apps/bilibili_live_danmu/lib/home_page.dart 太乱了， 简化一下， 参考settings panel, 同样的管理， 所有内容都在编辑时自动保存，
+唯一区别是home要负责解析参数， 只有初始化时解析一次， 传入了的参数设置到ui的同时就保存下来，后面的逻辑不要受args影响，
+
+AI拆个代码能把握颜色选择器换了，而且编译不过，
+
