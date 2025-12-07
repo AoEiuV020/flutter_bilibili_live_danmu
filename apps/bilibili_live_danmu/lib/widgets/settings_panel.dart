@@ -133,10 +133,10 @@ class _SettingsPanelState extends State<SettingsPanel> {
             _buildSliderSetting(
               '显示时间 (秒)',
               state.duration.toDouble(),
-              30,
+              1,
               300,
               (newValue) => cubit.setDuration(newValue.toInt()),
-              divisions: 27,
+              divisions: 299,
               sliderLabel: '${state.duration}秒',
             ),
 
