@@ -38,37 +38,18 @@ class _SettingsPanelState extends State<SettingsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: isPortrait ? const Radius.circular(16) : Radius.zero,
-          topRight: const Radius.circular(16),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 非工作模式下显示服务器设置
-          if (!widget.isWorking) ...[
-            _buildServerSection(),
-            const SizedBox(height: 24),
-          ],
-          _buildDisplaySection(),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // 非工作模式下显示服务器设置
+        if (!widget.isWorking) ...[
+          _buildServerSection(),
           const SizedBox(height: 24),
-          _buildFilterSection(),
         ],
-      ),
+        _buildDisplaySection(),
+        const SizedBox(height: 24),
+        _buildFilterSection(),
+      ],
     );
   }
 

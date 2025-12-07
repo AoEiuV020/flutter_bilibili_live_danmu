@@ -172,3 +172,10 @@ AI死活改不好，
 1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart 这里不需要标题栏， 应该转移到live页面， 同时onClose也不需要了，setting page调整，
 
 1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart 设置里的所有颜色设置改用 https://pub.dev/packages/flutter_colorpicker 实现更完整的颜色设置，
+
+1. apps/bilibili_live_danmu/lib/widgets/settings_panel.dart:45 这个border不应该在panel中处理， 
+1. panel中保持简单的内容和padding, 其他都转移到上层live/settings page,live这边需要判断显示圆角和背景色，settings page不需要圆角，
+
+1. apps/bilibili_live_danmu/lib/live_page.dart:255 不是这样， live页要把整个设置面板包括标题栏一起设置唯一的背景和圆角，panel本身不需要，
+
+还是放弃圆角，漏出一点黑色太丑，
