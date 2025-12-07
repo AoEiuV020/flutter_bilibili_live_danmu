@@ -79,5 +79,5 @@ MIT License
 
 - **macOS**：已测试
 - **Android**：已测试
-- **Web**：存在跨域问题，需自行解决
+- **Web**：连接后端代理http请求避免跨域问题，已测试
 - **Windows**/**Linux**/**iOS**：暂不维护
