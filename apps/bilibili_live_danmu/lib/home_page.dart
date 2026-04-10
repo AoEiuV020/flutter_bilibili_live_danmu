@@ -103,8 +103,16 @@ class _HomePageState extends State<HomePage> {
       // 创建API客户端
       final BilibiliLiveApiClient client;
       if (_isProxyMode()) {
-        // 使用后端代理模式
-        client = BilibiliLiveApiClient(baseUrl: serverState.backendUrl.trim());
+        // 使用后端代理模式（同时传入凭证用于客户端签名，CORS 代理场景需要）
+        client = BilibiliLiveApiClient(
+          baseUrl: serverState.backendUrl.trim(),
+          accessKeyId: credState.accessKeyId.isEmpty
+              ? null
+              : credState.accessKeyId,
+          accessKeySecret: credState.accessKeySecret.isEmpty
+              ? null
+              : credState.accessKeySecret,
+        );
       } else {
         // 直连官方 API 模式
         client = BilibiliLiveApiClient(

@@ -23,14 +23,15 @@ class BilibiliLiveApiClient {
   /// 自定义后端地址（可选，为空时使用官方 API）
   final String? baseUrl;
 
-  /// 是否使用代理服务器模式（不需要认证）
-  bool get isProxyMode => baseUrl != null;
+  /// 是否需要客户端签名
+  bool get needsSignature => accessKeyId != null && accessKeySecret != null;
 
   /// 创建 API 客户端
   ///
-  /// 两种模式：
-  /// 1. 直连官方 API：需要提供 [accessKeyId] 和 [accessKeySecret]
-  /// 2. 通过代理服务器：只需提供 [baseUrl]，不需要 accessKey
+  /// [baseUrl] 和 [accessKeyId]/[accessKeySecret] 可独立使用：
+  /// - 直连官方 API：需要 [accessKeyId] 和 [accessKeySecret]，不需要 [baseUrl]
+  /// - 签名代理（如 bilibili_live_danmu_proxy）：只需 [baseUrl]
+  /// - CORS 代理（如 nginx 反代）：需要 [baseUrl] + [accessKeyId] + [accessKeySecret]
   BilibiliLiveApiClient({
     this.accessKeyId,
     this.accessKeySecret,
@@ -39,17 +40,12 @@ class BilibiliLiveApiClient {
     Duration? receiveTimeout,
     bool enableLogging = true,
   }) {
-    // 验证参数：非代理模式下必须提供 accessKey
-    if (!isProxyMode) {
-      if (accessKeyId == null) {
-        throw ArgumentError('直连官方 API 时 accessKeyId 不能为空');
-      }
-      if (accessKeySecret == null) {
-        throw ArgumentError('直连官方 API 时 accessKeySecret 不能为空');
-      }
+    // 无 baseUrl 时必须提供签名凭证（直连官方 API）
+    if (baseUrl == null && !needsSignature) {
+      throw ArgumentError('直连官方 API 时 accessKeyId 和 accessKeySecret 不能为空');
     }
 
-    final effectiveBaseUrl = isProxyMode ? baseUrl! : officialBaseUrl;
+    final effectiveBaseUrl = baseUrl ?? officialBaseUrl;
 
     _dio = Dio(
       BaseOptions(
@@ -61,8 +57,8 @@ class BilibiliLiveApiClient {
       ),
     );
 
-    // 只有直连官方 API 时才添加签名拦截器
-    if (!isProxyMode) {
+    // 有签名凭证时添加签名拦截器
+    if (needsSignature) {
       _dio.interceptors.add(
         SignatureInterceptor(
           accessKeyId: accessKeyId!,

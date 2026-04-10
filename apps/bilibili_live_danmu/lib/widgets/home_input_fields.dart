@@ -100,8 +100,7 @@ Widget buildAccessKeyIdInput({
         hintText: '请输入 Access Key ID',
         controller: controller,
         prefixIcon: Icons.key,
-        enabled: !isProxyMode,
-        helperText: isProxyMode ? '使用后端代理时无效' : null,
+        helperText: isProxyMode ? '留空则由后端代理签名' : null,
         onChanged: onChanged,
         validator: (value) {
           // 代理模式下不需要验证
@@ -131,8 +130,7 @@ Widget buildAccessKeySecretInput({
         controller: controller,
         prefixIcon: Icons.lock,
         obscureText: true,
-        enabled: !isProxyMode,
-        helperText: isProxyMode ? '使用后端代理时无效' : null,
+        helperText: isProxyMode ? '留空则由后端代理签名' : null,
         onChanged: onChanged,
         validator: (value) {
           // 代理模式下不需要验证
